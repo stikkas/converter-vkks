@@ -9,10 +9,18 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Properties;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
+import my.home.pro.simpletestejb.HelloBean;
+import my.home.pro.simpletestejb.HelloBeanRemote;
 
 /**
  *
@@ -27,55 +35,48 @@ public class Converter extends javax.swing.JFrame {
 		initComponents();
 		chooser = new JFileChooser();
 		chooser.setAcceptAllFileFilterUsed(false);
-		dbFileEdit.getDocument().addDocumentListener(new DocumentListener() {
-
-			@Override
-			public void insertUpdate(DocumentEvent e) {
-				setExecEnabled();
-			}
-
-			@Override
-			public void removeUpdate(DocumentEvent e) {
-				setExecEnabled();
-			}
-
-			@Override
-			public void changedUpdate(DocumentEvent e) {
-				setExecEnabled();
-			}
-		});
-
-		dstDirEdit.getDocument().addDocumentListener(new DocumentListener() {
-
-			@Override
-			public void insertUpdate(DocumentEvent e) {
-				setExecEnabled();
-			}
-
-			@Override
-			public void removeUpdate(DocumentEvent e) {
-				setExecEnabled();
-			}
-
-			@Override
-			public void changedUpdate(DocumentEvent e) {
-				setExecEnabled();
-			}
-		});
-
+		setChangeTextListener(dbFileEdit);
+		setChangeTextListener(srcDirEdit);
+		setChangeTextListener(dstDirEdit);
 	}
 
+	/**
+	 * делаем доступной кнопку выполнения
+	 */
 	private void setExecEnabled() {
 
 		String srcFileName = dbFileEdit.getText();
 		String dstDirName = dstDirEdit.getText();
-		if (srcFileName.isEmpty() || dstDirName.isEmpty()) {
+		String srcDirName = srcDirEdit.getText();
+		if (srcFileName.isEmpty() || dstDirName.isEmpty() || srcDirName.isEmpty()) {
 			execButton.setEnabled(false);
 		} else {
 			Path srcFile = Paths.get(srcFileName);
 			execButton.setEnabled(Files.isRegularFile(srcFile) && Files.isReadable(srcFile)
-					&& Files.isDirectory(Paths.get(dstDirName)));
+					&& Files.isDirectory(Paths.get(dstDirName))
+					&& Files.isDirectory(Paths.get(srcDirName)));
 		}
+	}
+
+	private void setChangeTextListener(JTextField field) {
+		field.getDocument().addDocumentListener(new DocumentListener() {
+
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				setExecEnabled();
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				setExecEnabled();
+			}
+
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+				setExecEnabled();
+			}
+		});
+
 	}
 
 	/**
@@ -87,25 +88,32 @@ public class Converter extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jToggleButton1 = new javax.swing.JToggleButton();
         dbFileEdit = new javax.swing.JTextField();
         dbFileChoose = new javax.swing.JButton();
         dstDirEdit = new javax.swing.JTextField();
         dstDirChoose = new javax.swing.JButton();
         execButton = new javax.swing.JButton();
+        srcDirEdit = new javax.swing.JTextField();
+        srcDirChoose = new javax.swing.JButton();
+
+        jToggleButton1.setText("jToggleButton1");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Конвертер данных из MS Access в ВККС");
+        setTitle("Конвертор данных из MS Access в ВККС");
 
         dbFileEdit.setToolTipText("Путь к файлу с БД MS Access");
 
-        dbFileChoose.setText("Выбрать файл БД");
+        dbFileChoose.setText("Файл БД");
         dbFileChoose.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 dbFileChooseActionPerformed(evt);
             }
         });
 
-        dstDirChoose.setText("Выбрать папку");
+        dstDirEdit.setToolTipText("Путь к папке с результатами конвертации");
+
+        dstDirChoose.setText("Папка назначения");
         dstDirChoose.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 dstDirChooseActionPerformed(evt);
@@ -114,22 +122,37 @@ public class Converter extends javax.swing.JFrame {
 
         execButton.setText("Преобразовать");
         execButton.setEnabled(false);
+        execButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                execButtonActionPerformed(evt);
+            }
+        });
+
+        srcDirEdit.setToolTipText("Путь к папке с файлами pdf");
+
+        srcDirChoose.setText("Папка с PDFs");
+        srcDirChoose.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                srcDirChooseActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(dstDirEdit, javax.swing.GroupLayout.DEFAULT_SIZE, 328, Short.MAX_VALUE)
-                    .addComponent(dbFileEdit))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(dstDirEdit, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(dbFileEdit, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 356, Short.MAX_VALUE)
+                    .addComponent(srcDirEdit))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(execButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addComponent(dbFileChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(dstDirChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                    .addComponent(dbFileChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(dstDirChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(srcDirChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -141,9 +164,13 @@ public class Converter extends javax.swing.JFrame {
                     .addComponent(dbFileChoose))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(dstDirEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(dstDirChoose))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 9, Short.MAX_VALUE)
+                    .addComponent(srcDirEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(srcDirChoose))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(dstDirChoose)
+                    .addComponent(dstDirEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 14, Short.MAX_VALUE)
                 .addComponent(execButton)
                 .addContainerGap())
         );
@@ -188,6 +215,42 @@ public class Converter extends javax.swing.JFrame {
 
     }//GEN-LAST:event_dstDirChooseActionPerformed
 
+    private void srcDirChooseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_srcDirChooseActionPerformed
+		chooser.setDialogTitle("Выбор папки с файлами pdf");
+		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		chooser.setFileFilter(dirFilter);
+		if (sourceFile != null) {
+			chooser.setCurrentDirectory(sourceFile.getParentFile());
+		}
+		int result = chooser.showOpenDialog(this);
+		if (result == JFileChooser.APPROVE_OPTION) {
+			srcDirEdit.setText(chooser.getSelectedFile().getPath());
+		}
+
+    }//GEN-LAST:event_srcDirChooseActionPerformed
+
+    private void execButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_execButtonActionPerformed
+		dbFileEdit.setEditable(false);
+		srcDirEdit.setEditable(false);
+		dstDirEdit.setEditable(false);
+		final String srcDbFileName = dbFileEdit.getText();
+		final String srcDirPdfName = srcDirEdit.getText();
+		final String dstDirName = dstDirEdit.getText();
+		dbFileEdit.setEditable(true);
+		srcDirEdit.setEditable(true);
+		dstDirEdit.setEditable(true);
+		new Thread() {
+
+			@Override
+			public void run() {
+					convertData(srcDbFileName, dstDirName);
+					copyPdf(srcDirPdfName, dstDirName);
+					createSchema(dstDirName);
+			}
+
+		}.start();
+    }//GEN-LAST:event_execButtonActionPerformed
+
 	/**
 	 * @param args the command line arguments
 	 */
@@ -195,6 +258,16 @@ public class Converter extends javax.swing.JFrame {
 
 		System.setProperty("awt.useSystemAAFontSettings", "lcd");
 		System.setProperty("swing.aatext", "true");
+
+		try {
+			getRemoteBean();
+		} catch (NamingException ex) {
+			JOptionPane.showMessageDialog(null, "Не могу получить удаленный бин.\n"
+					+ "Проверьте настройки подключения к серверу приложений", "Ошибка",
+					JOptionPane.ERROR_MESSAGE);
+			System.exit(1);
+		}
+		
 		try {
 			for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
 				if ("Nimbus".equals(info.getName())) {
@@ -228,7 +301,11 @@ public class Converter extends javax.swing.JFrame {
     private javax.swing.JButton dstDirChoose;
     private javax.swing.JTextField dstDirEdit;
     private javax.swing.JButton execButton;
+    private javax.swing.JToggleButton jToggleButton1;
+    private javax.swing.JButton srcDirChoose;
+    private javax.swing.JTextField srcDirEdit;
     // End of variables declaration//GEN-END:variables
+	private static HelloBeanRemote remoteBean;
 	private File sourceFile;
 	private File destinationDir;
 	private final JFileChooser chooser;
@@ -260,4 +337,51 @@ public class Converter extends javax.swing.JFrame {
 
 	};
 
+	/**
+	 * Преобразует данные из файла Access в файлы json
+	 *
+	 * @param srcDbFileName база данных MS Access
+	 * @param dstDirName директория назначения для json-файлов
+	 */
+	private void convertData(String srcDbFileName, String dstDirName) {
+		System.out.println("Convert from Access to JSON");
+	}
+
+	/**
+	 * Копирует pdf файлы из исходной директории в директроию назначения
+	 *
+	 * @param srcDirPdfName директория с файлами pdf
+	 * @param dstDirName директория назначения
+	 */
+	private void copyPdf(String srcDirPdfName, String dstDirName) {
+		System.out.println("Copy Pdf files");
+	}
+
+	/**
+	 * Записывает преобразованные данные в базы ElsticSearch ВККС
+	 *
+	 * @param dstDirName папка с преобразованными данными
+	 */
+	private void createSchema(String dstDirName)  {
+		System.out.println(remoteBean.sayHello());
+		System.out.println("Save data to ElasticSearch");
+	}
+
+	private static void getRemoteBean() throws NamingException{
+		final Properties jndiProperties = new Properties();
+		jndiProperties.put(Context.URL_PKG_PREFIXES, "org.jboss.ejb.client.naming");
+
+		final Context context = new InitialContext(jndiProperties);
+
+//		final String appName = "";
+		final String moduleName = "SimpleTestEJB-0.0.1";
+//		final String distinctName = "";
+		final String beanName = HelloBean.class.getSimpleName();
+		final String viewClassName = HelloBeanRemote.class.getName();
+
+		String connectionName = "ejb:" + /*appName +*/ "/" + moduleName + "/" /*+ distinctName */
+				+ "/" + beanName + "!" + viewClassName;
+
+		remoteBean = (HelloBeanRemote) context.lookup(connectionName);
+	}
 }
