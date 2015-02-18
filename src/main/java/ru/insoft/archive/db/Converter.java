@@ -5,6 +5,7 @@
  */
 package ru.insoft.archive.db;
 
+import java.awt.event.ItemEvent;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,8 +20,7 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
-import my.home.pro.simpletestejb.HelloBean;
-import my.home.pro.simpletestejb.HelloBeanRemote;
+import ru.insoft.archive.eavkks.load.ejb.LoaderRemote;
 
 /**
  *
@@ -48,14 +48,15 @@ public class Converter extends javax.swing.JFrame {
 		String srcFileName = dbFileEdit.getText();
 		String dstDirName = dstDirEdit.getText();
 		String srcDirName = srcDirEdit.getText();
-		if (srcFileName.isEmpty() || dstDirName.isEmpty() || srcDirName.isEmpty()) {
-			execButton.setEnabled(false);
+		if (srcFileName.isEmpty() || dstDirName.isEmpty()) {
+			convertButton.setEnabled(false);
 		} else {
 			Path srcFile = Paths.get(srcFileName);
-			execButton.setEnabled(Files.isRegularFile(srcFile) && Files.isReadable(srcFile)
+			convertButton.setEnabled(Files.isRegularFile(srcFile) && Files.isReadable(srcFile)
 					&& Files.isDirectory(Paths.get(dstDirName))
-					&& Files.isDirectory(Paths.get(srcDirName)));
+					&& (srcDirName.isEmpty() || Files.isDirectory(Paths.get(srcDirName))));
 		}
+		saveToDBButton.setEnabled(!dstDirName.isEmpty() && Files.isDirectory(Paths.get(dstDirName)));
 	}
 
 	private void setChangeTextListener(JTextField field) {
@@ -93,9 +94,26 @@ public class Converter extends javax.swing.JFrame {
         dbFileChoose = new javax.swing.JButton();
         dstDirEdit = new javax.swing.JTextField();
         dstDirChoose = new javax.swing.JButton();
-        execButton = new javax.swing.JButton();
+        convertButton = new javax.swing.JButton();
         srcDirEdit = new javax.swing.JTextField();
         srcDirChoose = new javax.swing.JButton();
+        jPanel1 = new javax.swing.JPanel();
+        jLabel1 = new javax.swing.JLabel();
+        driverBox = new javax.swing.JComboBox();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
+        jLabel5 = new javax.swing.JLabel();
+        hostEdit = new javax.swing.JTextField();
+        portEdit = new javax.swing.JTextField();
+        loginEdit = new javax.swing.JTextField();
+        dbPropsCheck = new javax.swing.JCheckBox();
+        passwordEdit = new javax.swing.JPasswordField();
+        jLabel6 = new javax.swing.JLabel();
+        dbEdit = new javax.swing.JTextField();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        logPanel = new javax.swing.JTextArea();
+        saveToDBButton = new javax.swing.JButton();
 
         jToggleButton1.setText("jToggleButton1");
 
@@ -120,11 +138,11 @@ public class Converter extends javax.swing.JFrame {
             }
         });
 
-        execButton.setText("Преобразовать");
-        execButton.setEnabled(false);
-        execButton.addActionListener(new java.awt.event.ActionListener() {
+        convertButton.setText("Преобразовать");
+        convertButton.setEnabled(false);
+        convertButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                execButtonActionPerformed(evt);
+                convertButtonActionPerformed(evt);
             }
         });
 
@@ -137,41 +155,169 @@ public class Converter extends javax.swing.JFrame {
             }
         });
 
+        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)), "Настройки подключения к БД справочников", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP));
+
+        jLabel1.setText("Драйвер:");
+
+        driverBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "org.postgresql.Driver" }));
+        driverBox.setEnabled(false);
+
+        jLabel2.setText("Сервер:");
+
+        jLabel3.setText("Порт:");
+
+        jLabel4.setText("Логин:");
+
+        jLabel5.setText("Пароль:");
+
+        hostEdit.setText("spun.insoft03.lan");
+        hostEdit.setEnabled(false);
+
+        portEdit.setText("5432");
+        portEdit.setEnabled(false);
+
+        loginEdit.setText("vkks");
+        loginEdit.setEnabled(false);
+
+        dbPropsCheck.setText("Изменить");
+        dbPropsCheck.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                dbPropsCheckItemStateChanged(evt);
+            }
+        });
+
+        passwordEdit.setText("vkks");
+        passwordEdit.setEnabled(false);
+
+        jLabel6.setText("База:");
+
+        dbEdit.setText("calypso");
+        dbEdit.setEnabled(false);
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel2, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel3, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel4, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel5, javax.swing.GroupLayout.Alignment.TRAILING))
+                .addGap(18, 18, 18)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(driverBox, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(portEdit, javax.swing.GroupLayout.DEFAULT_SIZE, 79, Short.MAX_VALUE)
+                            .addComponent(loginEdit)
+                            .addComponent(passwordEdit))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGap(0, 0, Short.MAX_VALUE)
+                                .addComponent(dbPropsCheck))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(jLabel6)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(dbEdit))))
+                    .addComponent(hostEdit))
+                .addContainerGap())
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel1)
+                    .addComponent(driverBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel2)
+                    .addComponent(hostEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel3)
+                            .addComponent(portEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel6)
+                            .addComponent(dbEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel4)
+                            .addComponent(loginEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel5)
+                            .addComponent(passwordEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(0, 16, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(dbPropsCheck)
+                        .addContainerGap())))
+        );
+
+        logPanel.setEditable(false);
+        logPanel.setColumns(20);
+        logPanel.setRows(5);
+        jScrollPane1.setViewportView(logPanel);
+
+        saveToDBButton.setText("Записать в ВККС");
+        saveToDBButton.setEnabled(false);
+        saveToDBButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                saveToDBButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(dstDirEdit, javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(dbFileEdit, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 356, Short.MAX_VALUE)
-                    .addComponent(srcDirEdit))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(dstDirEdit)
+                    .addComponent(dbFileEdit, javax.swing.GroupLayout.DEFAULT_SIZE, 433, Short.MAX_VALUE)
+                    .addComponent(srcDirEdit, javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jScrollPane1))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(execButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(dbFileChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(dstDirChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(srcDirChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(srcDirChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(convertButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(saveToDBButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(dbFileEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(dbFileChoose))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(dbFileEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(dbFileChoose))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(srcDirEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(srcDirChoose))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(dstDirChoose)
+                            .addComponent(dstDirEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(convertButton))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(srcDirEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(srcDirChoose))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(dstDirChoose)
-                    .addComponent(dstDirEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 14, Short.MAX_VALUE)
-                .addComponent(execButton)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 228, Short.MAX_VALUE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(saveToDBButton)))
                 .addContainerGap())
         );
 
@@ -180,8 +326,10 @@ public class Converter extends javax.swing.JFrame {
         dstDirEdit.getAccessibleContext().setAccessibleName("dstDirEdit");
         dstDirEdit.getAccessibleContext().setAccessibleDescription("Путь к преобразованным данным");
         dstDirChoose.getAccessibleContext().setAccessibleDescription("Выбор папки назначения");
-        execButton.getAccessibleContext().setAccessibleName("execButton");
-        execButton.getAccessibleContext().setAccessibleDescription("");
+        convertButton.getAccessibleContext().setAccessibleName("execButton");
+        convertButton.getAccessibleContext().setAccessibleDescription("");
+        jPanel1.getAccessibleContext().setAccessibleName("");
+        jPanel1.getAccessibleContext().setAccessibleDescription("");
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -229,7 +377,7 @@ public class Converter extends javax.swing.JFrame {
 
     }//GEN-LAST:event_srcDirChooseActionPerformed
 
-    private void execButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_execButtonActionPerformed
+    private void convertButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_convertButtonActionPerformed
 		dbFileEdit.setEditable(false);
 		srcDirEdit.setEditable(false);
 		dstDirEdit.setEditable(false);
@@ -239,18 +387,37 @@ public class Converter extends javax.swing.JFrame {
 		dbFileEdit.setEditable(true);
 		srcDirEdit.setEditable(true);
 		dstDirEdit.setEditable(true);
-		new Thread() {
+		new Worker(logPanel, srcDbFileName, srcDirPdfName, dstDirName,
+				portEdit.getText(), (String) driverBox.getItemAt(driverBox.getSelectedIndex()),
+				hostEdit.getText(), loginEdit.getText(),
+				new String(passwordEdit.getPassword()), dbEdit.getText()).start();
 
-			@Override
-			public void run() {
-					convertData(srcDbFileName, dstDirName);
-					copyPdf(srcDirPdfName, dstDirName);
-					createSchema(dstDirName);
-			}
+    }//GEN-LAST:event_convertButtonActionPerformed
 
-		}.start();
-    }//GEN-LAST:event_execButtonActionPerformed
+	/**
+	 * Записывает преобразованные данные в базы ElsticSearch ВККС
+	 *
+	 * @param dstDirName папка с преобразованными данными
+	 */
+    private void saveToDBButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveToDBButtonActionPerformed
+		try {
+			logPanel.append(remoteBean.loadRemote(dstDirEdit.getText()) + "\n");
+		} catch (Exception e) {
+			logPanel.append(e.getMessage() + "\n");
+		}
+    }//GEN-LAST:event_saveToDBButtonActionPerformed
 
+    private void dbPropsCheckItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_dbPropsCheckItemStateChanged
+		enableDisableDbProps(evt.getStateChange() == ItemEvent.SELECTED);
+    }//GEN-LAST:event_dbPropsCheckItemStateChanged
+
+	private void enableDisableDbProps(boolean stat) {
+		portEdit.setEnabled(stat);
+		hostEdit.setEnabled(stat);
+		loginEdit.setEnabled(stat);
+		passwordEdit.setEnabled(stat);
+		dbEdit.setEnabled(stat);
+	}
 	/**
 	 * @param args the command line arguments
 	 */
@@ -267,7 +434,7 @@ public class Converter extends javax.swing.JFrame {
 					JOptionPane.ERROR_MESSAGE);
 			System.exit(1);
 		}
-		
+
 		try {
 			for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
 				if ("Nimbus".equals(info.getName())) {
@@ -296,16 +463,33 @@ public class Converter extends javax.swing.JFrame {
 	}
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton convertButton;
+    private javax.swing.JTextField dbEdit;
     private javax.swing.JButton dbFileChoose;
     private javax.swing.JTextField dbFileEdit;
+    private javax.swing.JCheckBox dbPropsCheck;
+    private javax.swing.JComboBox driverBox;
     private javax.swing.JButton dstDirChoose;
     private javax.swing.JTextField dstDirEdit;
-    private javax.swing.JButton execButton;
+    private javax.swing.JTextField hostEdit;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JToggleButton jToggleButton1;
+    private javax.swing.JTextArea logPanel;
+    private javax.swing.JTextField loginEdit;
+    private javax.swing.JPasswordField passwordEdit;
+    private javax.swing.JTextField portEdit;
+    private javax.swing.JButton saveToDBButton;
     private javax.swing.JButton srcDirChoose;
     private javax.swing.JTextField srcDirEdit;
     // End of variables declaration//GEN-END:variables
-	private static HelloBeanRemote remoteBean;
+	private static LoaderRemote remoteBean;
 	private File sourceFile;
 	private File destinationDir;
 	private final JFileChooser chooser;
@@ -337,51 +521,25 @@ public class Converter extends javax.swing.JFrame {
 
 	};
 
-	/**
-	 * Преобразует данные из файла Access в файлы json
-	 *
-	 * @param srcDbFileName база данных MS Access
-	 * @param dstDirName директория назначения для json-файлов
-	 */
-	private void convertData(String srcDbFileName, String dstDirName) {
-		System.out.println("Convert from Access to JSON");
-	}
-
-	/**
-	 * Копирует pdf файлы из исходной директории в директроию назначения
-	 *
-	 * @param srcDirPdfName директория с файлами pdf
-	 * @param dstDirName директория назначения
-	 */
-	private void copyPdf(String srcDirPdfName, String dstDirName) {
-		System.out.println("Copy Pdf files");
-	}
-
-	/**
-	 * Записывает преобразованные данные в базы ElsticSearch ВККС
-	 *
-	 * @param dstDirName папка с преобразованными данными
-	 */
-	private void createSchema(String dstDirName)  {
-		System.out.println(remoteBean.sayHello());
-		System.out.println("Save data to ElasticSearch");
-	}
-
-	private static void getRemoteBean() throws NamingException{
+	private static void getRemoteBean() throws NamingException {
 		final Properties jndiProperties = new Properties();
 		jndiProperties.put(Context.URL_PKG_PREFIXES, "org.jboss.ejb.client.naming");
-
+		jndiProperties.put("scoped.context", "true");
+// username
+//		jndiProperties.put(Context.SECURITY_PRINCIPAL, "LOAD");
+// password
+//		jndiProperties.put(Context.SECURITY_CREDENTIALS, "loader");
 		final Context context = new InitialContext(jndiProperties);
 
 //		final String appName = "";
-		final String moduleName = "SimpleTestEJB-0.0.1";
+		final String moduleName = "ea-vkks-web-1.0.1";
 //		final String distinctName = "";
-		final String beanName = HelloBean.class.getSimpleName();
-		final String viewClassName = HelloBeanRemote.class.getName();
+		final String beanName = "LoaderImpl";
+		final String viewClassName = LoaderRemote.class.getName();
 
 		String connectionName = "ejb:" + /*appName +*/ "/" + moduleName + "/" /*+ distinctName */
 				+ "/" + beanName + "!" + viewClassName;
 
-		remoteBean = (HelloBeanRemote) context.lookup(connectionName);
+		remoteBean = (LoaderRemote) context.lookup(connectionName);
 	}
 }
