@@ -41,12 +41,15 @@
                   <Component id="jScrollPane1" max="32767" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                  <Component id="dbFileChoose" max="32767" attributes="0"/>
-                  <Component id="dstDirChoose" max="32767" attributes="0"/>
-                  <Component id="srcDirChoose" max="32767" attributes="0"/>
-                  <Component id="convertButton" alignment="0" max="32767" attributes="0"/>
-                  <Component id="saveToDBButton" max="32767" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                      <Component id="dbFileChoose" max="32767" attributes="0"/>
+                      <Component id="dstDirChoose" max="32767" attributes="0"/>
+                      <Component id="srcDirChoose" max="32767" attributes="0"/>
+                      <Component id="convertButton" alignment="0" max="32767" attributes="0"/>
+                      <Component id="saveToDBButton" max="32767" attributes="0"/>
+                  </Group>
+                  <Component id="httpCheckBox" min="-2" pref="123" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -82,6 +85,8 @@
                   <Component id="jScrollPane1" pref="228" max="32767" attributes="0"/>
                   <Group type="102" attributes="0">
                       <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                      <Component id="httpCheckBox" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
                       <Component id="saveToDBButton" min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
@@ -360,6 +365,11 @@
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="saveToDBButtonActionPerformed"/>
       </Events>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="httpCheckBox">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="HTTP &#x43a;&#x43b;&#x438;&#x435;&#x43d;&#x442;"/>
+      </Properties>
     </Component>
   </SubComponents>
 </Form>

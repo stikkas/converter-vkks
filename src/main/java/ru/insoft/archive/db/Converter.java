@@ -7,6 +7,8 @@ package ru.insoft.archive.db;
 
 import java.awt.event.ItemEvent;
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,6 +22,12 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.DefaultHttpClient;
 import ru.insoft.archive.eavkks.load.ejb.LoaderRemote;
 
 /**
@@ -114,6 +122,7 @@ public class Converter extends javax.swing.JFrame {
         jScrollPane1 = new javax.swing.JScrollPane();
         logPanel = new javax.swing.JTextArea();
         saveToDBButton = new javax.swing.JButton();
+        httpCheckBox = new javax.swing.JCheckBox();
 
         jToggleButton1.setText("jToggleButton1");
 
@@ -271,6 +280,8 @@ public class Converter extends javax.swing.JFrame {
             }
         });
 
+        httpCheckBox.setText("HTTP клиент");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -284,12 +295,14 @@ public class Converter extends javax.swing.JFrame {
                     .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jScrollPane1))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(dbFileChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(dstDirChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(srcDirChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(convertButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(saveToDBButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addComponent(dbFileChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(dstDirChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(srcDirChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(convertButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(saveToDBButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(httpCheckBox, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -317,6 +330,8 @@ public class Converter extends javax.swing.JFrame {
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 228, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(httpCheckBox)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(saveToDBButton)))
                 .addContainerGap())
         );
@@ -400,20 +415,35 @@ public class Converter extends javax.swing.JFrame {
 	 * @param dstDirName папка с преобразованными данными
 	 */
     private void saveToDBButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveToDBButtonActionPerformed
+		String dstDir = dstDirEdit.getText();
+		if (httpCheckBox.isSelected()) { // Выполняем заливку через http 
+			HttpClient client = new DefaultHttpClient();
+			HttpPost post = new HttpPost("http://localhost:8080/ea-vkks-web/load");
 
-		try {
-			getRemoteBean();
-		} catch (NamingException ex) {
-			JOptionPane.showMessageDialog(null, "Не могу получить удаленный бин.\n"
-					+ "Проверьте настройки подключения к серверу приложений", "Ошибка",
-					JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-
-		try {
-			logPanel.append(remoteBean.loadRemote(dstDirEdit.getText()) + "\n");
-		} catch (Exception e) {
-			logPanel.append(e.getMessage() + "\n");
+			try {
+				post.addHeader("Accept", "text/plain");
+				post.setEntity(new StringEntity(dstDir, "text/plain", Charset.defaultCharset().toString()));
+				ResponseHandler<String> rh = new BasicResponseHandler();
+				logPanel.append(client.execute(post, rh) + "\n");
+			} catch (IOException ex) {
+				logPanel.append(ex.getMessage() + "\n");
+			} finally {
+				client.getConnectionManager().shutdown();
+			}
+		} else { // Делаем все через ejb бин
+			try {
+				getRemoteBean();
+			} catch (NamingException ex) {
+				JOptionPane.showMessageDialog(null, "Не могу получить удаленный бин.\n"
+						+ "Проверьте настройки подключения к серверу приложений", "Ошибка",
+						JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+			try {
+				logPanel.append(remoteBean.loadRemote(dstDir) + "\n");
+			} catch (Exception e) {
+				logPanel.append(e.getMessage() + "\n");
+			}
 		}
     }//GEN-LAST:event_saveToDBButtonActionPerformed
 
@@ -421,6 +451,13 @@ public class Converter extends javax.swing.JFrame {
 		enableDisableDbProps(evt.getStateChange() == ItemEvent.SELECTED);
     }//GEN-LAST:event_dbPropsCheckItemStateChanged
 
+	/**
+	 * Включает или отключает доступность изменения настроек подключиения к БД
+	 * со справочниками.
+	 *
+	 * @param stat состояние true - сделать доступными, false - сделать
+	 * недоступными
+	 */
 	private void enableDisableDbProps(boolean stat) {
 		portEdit.setEnabled(stat);
 		hostEdit.setEnabled(stat);
@@ -441,11 +478,13 @@ public class Converter extends javax.swing.JFrame {
 				if ("Nimbus".equals(info.getName())) {
 					javax.swing.UIManager.setLookAndFeel(info.getClassName());
 					break;
+
 				}
 			}
 		} catch (ClassNotFoundException | InstantiationException |
 				IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
-			java.util.logging.Logger.getLogger(Converter.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+			java.util.logging.Logger.getLogger(Converter.class
+					.getName()).log(java.util.logging.Level.SEVERE, null, ex);
 		}
 		//</editor-fold>
 
@@ -473,6 +512,7 @@ public class Converter extends javax.swing.JFrame {
     private javax.swing.JButton dstDirChoose;
     private javax.swing.JTextField dstDirEdit;
     private javax.swing.JTextField hostEdit;
+    private javax.swing.JCheckBox httpCheckBox;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -522,6 +562,11 @@ public class Converter extends javax.swing.JFrame {
 
 	};
 
+	/**
+	 * Получает доступ к ejb бину для заливки данных на сервер
+	 *
+	 * @throws NamingException
+	 */
 	private static void getRemoteBean() throws NamingException {
 		final Properties jndiProperties = new Properties();
 		jndiProperties.put(Context.URL_PKG_PREFIXES, "org.jboss.ejb.client.naming");
@@ -536,7 +581,8 @@ public class Converter extends javax.swing.JFrame {
 		final String moduleName = "ea-vkks-web-1.0.1";
 //		final String distinctName = "";
 		final String beanName = "LoaderImpl";
-		final String viewClassName = LoaderRemote.class.getName();
+		final String viewClassName = LoaderRemote.class
+				.getName();
 
 		String connectionName = "ejb:" + /*appName +*/ "/" + moduleName + "/" /*+ distinctName */
 				+ "/" + beanName + "!" + viewClassName;
