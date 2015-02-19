@@ -2,6 +2,7 @@ package ru.insoft.archive.db.entity.dict;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -13,7 +14,6 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 
 /**
  *
@@ -24,47 +24,37 @@ import javax.xml.bind.annotation.XmlTransient;
 @XmlRootElement
 @NamedQueries({
 	@NamedQuery(name = "DescriptorValue.findAll", query = "SELECT d FROM DescriptorValue d"),
-	@NamedQuery(name = "DescriptorValue.findByDescriptorValueId", query = "SELECT d FROM DescriptorValue d WHERE d.descriptorValueId = :descriptorValueId"),
-	@NamedQuery(name = "DescriptorValue.findByFullValue", query = "SELECT d FROM DescriptorValue d WHERE d.fullValue = :fullValue"),
-	@NamedQuery(name = "DescriptorValue.findByShortValue", query = "SELECT d FROM DescriptorValue d WHERE d.shortValue = :shortValue"),
-	@NamedQuery(name = "DescriptorValue.findByValueCode", query = "SELECT d FROM DescriptorValue d WHERE d.valueCode = :valueCode"),
-	@NamedQuery(name = "DescriptorValue.findBySortOrder", query = "SELECT d FROM DescriptorValue d WHERE d.sortOrder = :sortOrder")})
+	@NamedQuery(name = "DescriptorValue.findByGroup",
+			query = "SELECT d FROM DescriptorValue d LEFT JOIN d.descriptorGroupId g where g.groupCode = :code")
+})
 public class DescriptorValue implements Serializable {
+
 	private static final long serialVersionUID = 1L;
+
 	@Id
-    @Basic(optional = false)
-    @Column(name = "descriptor_value_id")
-	private Long descriptorValueId;
 	@Basic(optional = false)
-    @Column(name = "full_value")
+	@Column(name = "descriptor_value_id")
+	private Long descriptorValueId;
+
+	@Basic(optional = false)
+	@Column(name = "full_value")
 	private String fullValue;
-	@Column(name = "short_value")
-	private String shortValue;
+
 	@Column(name = "value_code")
 	private String valueCode;
-	@Basic(optional = false)
-    @Column(name = "sort_order")
-	private long sortOrder;
-	@OneToMany(mappedBy = "parentValueId")
-	private Collection<DescriptorValue> descriptorValueCollection;
-	@JoinColumn(name = "parent_value_id", referencedColumnName = "descriptor_value_id")
-    @ManyToOne
-	private DescriptorValue parentValueId;
+
 	@JoinColumn(name = "descriptor_group_id", referencedColumnName = "descriptor_group_id")
-    @ManyToOne(optional = false)
+	@ManyToOne(optional = false)
 	private DescriptorGroup descriptorGroupId;
+
+	@OneToMany(mappedBy = "descriptorValueId")
+	private List<DescriptorValueAttr> descriptorValueAttrCollection;
 
 	public DescriptorValue() {
 	}
 
 	public DescriptorValue(Long descriptorValueId) {
 		this.descriptorValueId = descriptorValueId;
-	}
-
-	public DescriptorValue(Long descriptorValueId, String fullValue, long sortOrder) {
-		this.descriptorValueId = descriptorValueId;
-		this.fullValue = fullValue;
-		this.sortOrder = sortOrder;
 	}
 
 	public Long getDescriptorValueId() {
@@ -83,12 +73,12 @@ public class DescriptorValue implements Serializable {
 		this.fullValue = fullValue;
 	}
 
-	public String getShortValue() {
-		return shortValue;
+	public DescriptorGroup getDescriptorGroupId() {
+		return descriptorGroupId;
 	}
 
-	public void setShortValue(String shortValue) {
-		this.shortValue = shortValue;
+	public void setDescriptorGroupId(DescriptorGroup descriptorGroupId) {
+		this.descriptorGroupId = descriptorGroupId;
 	}
 
 	public String getValueCode() {
@@ -99,62 +89,12 @@ public class DescriptorValue implements Serializable {
 		this.valueCode = valueCode;
 	}
 
-	public long getSortOrder() {
-		return sortOrder;
+	public List<DescriptorValueAttr> getDescriptorValueAttrCollection() {
+		return descriptorValueAttrCollection;
 	}
 
-	public void setSortOrder(long sortOrder) {
-		this.sortOrder = sortOrder;
-	}
-
-	@XmlTransient
-	public Collection<DescriptorValue> getDescriptorValueCollection() {
-		return descriptorValueCollection;
-	}
-
-	public void setDescriptorValueCollection(Collection<DescriptorValue> descriptorValueCollection) {
-		this.descriptorValueCollection = descriptorValueCollection;
-	}
-
-	public DescriptorValue getParentValueId() {
-		return parentValueId;
-	}
-
-	public void setParentValueId(DescriptorValue parentValueId) {
-		this.parentValueId = parentValueId;
-	}
-
-	public DescriptorGroup getDescriptorGroupId() {
-		return descriptorGroupId;
-	}
-
-	public void setDescriptorGroupId(DescriptorGroup descriptorGroupId) {
-		this.descriptorGroupId = descriptorGroupId;
-	}
-
-	@Override
-	public int hashCode() {
-		int hash = 0;
-		hash += (descriptorValueId != null ? descriptorValueId.hashCode() : 0);
-		return hash;
-	}
-
-	@Override
-	public boolean equals(Object object) {
-		// TODO: Warning - this method won't work in the case the id fields are not set
-		if (!(object instanceof DescriptorValue)) {
-			return false;
-		}
-		DescriptorValue other = (DescriptorValue) object;
-		if ((this.descriptorValueId == null && other.descriptorValueId != null) || (this.descriptorValueId != null && !this.descriptorValueId.equals(other.descriptorValueId))) {
-			return false;
-		}
-		return true;
-	}
-
-	@Override
-	public String toString() {
-		return "ru.insoft.archive.db.entity.dict.DescriptorValue[ descriptorValueId=" + descriptorValueId + " ]";
+	public void setDescriptorValueAttrCollection(List<DescriptorValueAttr> descriptorValueAttrCollection) {
+		this.descriptorValueAttrCollection = descriptorValueAttrCollection;
 	}
 
 }

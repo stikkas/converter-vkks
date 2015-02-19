@@ -3,7 +3,7 @@
 
   <persistence-unit name="Access" transaction-type="RESOURCE_LOCAL">
     <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
-    <class>ru.insoft.archive.db.entity.access.Z07</class>
+    <class>ru.insoft.archive.db.entity.access.Journal</class>
     <properties>
       <property name="javax.persistence.jdbc.password" value=""/>
       <property name="javax.persistence.jdbc.driver" value="net.ucanaccess.jdbc.UcanaccessDriver"/>
@@ -13,9 +13,11 @@
 
   <persistence-unit name="Dict" transaction-type="RESOURCE_LOCAL">
     <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
-    <class>ru.insoft.archive.db.entity.dict.CoreSubsystem</class>
+
     <class>ru.insoft.archive.db.entity.dict.DescriptorValue</class>
     <class>ru.insoft.archive.db.entity.dict.DescriptorGroup</class>
+
+    <class>ru.insoft.archive.db.entity.dict.DescriptorValueAttr</class>
   </persistence-unit>
 
 </persistence>

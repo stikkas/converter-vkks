@@ -400,6 +400,16 @@ public class Converter extends javax.swing.JFrame {
 	 * @param dstDirName папка с преобразованными данными
 	 */
     private void saveToDBButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveToDBButtonActionPerformed
+
+		try {
+			getRemoteBean();
+		} catch (NamingException ex) {
+			JOptionPane.showMessageDialog(null, "Не могу получить удаленный бин.\n"
+					+ "Проверьте настройки подключения к серверу приложений", "Ошибка",
+					JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
 		try {
 			logPanel.append(remoteBean.loadRemote(dstDirEdit.getText()) + "\n");
 		} catch (Exception e) {
@@ -418,22 +428,13 @@ public class Converter extends javax.swing.JFrame {
 		passwordEdit.setEnabled(stat);
 		dbEdit.setEnabled(stat);
 	}
+
 	/**
 	 * @param args the command line arguments
 	 */
 	public static void main(String args[]) {
-
 		System.setProperty("awt.useSystemAAFontSettings", "lcd");
 		System.setProperty("swing.aatext", "true");
-
-		try {
-			getRemoteBean();
-		} catch (NamingException ex) {
-			JOptionPane.showMessageDialog(null, "Не могу получить удаленный бин.\n"
-					+ "Проверьте настройки подключения к серверу приложений", "Ошибка",
-					JOptionPane.ERROR_MESSAGE);
-			System.exit(1);
-		}
 
 		try {
 			for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
