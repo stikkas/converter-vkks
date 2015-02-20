@@ -418,7 +418,7 @@ public class Converter extends javax.swing.JFrame {
 		String dstDir = dstDirEdit.getText();
 		if (httpCheckBox.isSelected()) { // Выполняем заливку через http 
 			HttpClient client = new DefaultHttpClient();
-			HttpPost post = new HttpPost("http://localhost:8080/ea-vkks-web/load");
+			HttpPost post = new HttpPost("http://localhost:8989/ea-vkks-web/load");
 
 			try {
 				post.addHeader("Accept", "text/plain");
