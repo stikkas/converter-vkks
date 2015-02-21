@@ -13,11 +13,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -28,6 +31,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
+import ru.insoft.archive.config.Config;
 import ru.insoft.archive.eavkks.load.ejb.LoaderRemote;
 
 /**
@@ -36,16 +40,32 @@ import ru.insoft.archive.eavkks.load.ejb.LoaderRemote;
  */
 public class Converter extends javax.swing.JFrame {
 
+	private final Config props;
+
 	/**
 	 * Creates new form Converter
 	 */
 	public Converter() {
 		initComponents();
+		props = new Config();
+
+		props.db = dbEdit.getText();
+		props.dbUser = loginEdit.getText();
+		props.dbPassword = new String(passwordEdit.getPassword());
+		props.dbPort = portEdit.getText();
+		props.dbHost = hostEdit.getText();
+		props.dbDriver = (String)driverBox.getItemAt(driverBox.getSelectedIndex());
+
 		chooser = new JFileChooser();
 		chooser.setAcceptAllFileFilterUsed(false);
-		setChangeTextListener(dbFileEdit);
-		setChangeTextListener(srcDirEdit);
-		setChangeTextListener(dstDirEdit);
+		setExtendedChangeTextListener(dbFileEdit, "dbFileName");
+		setExtendedChangeTextListener(srcDirEdit, "srcPdfDir");
+		setExtendedChangeTextListener(dstDirEdit, "dstDir");
+		setMainChangeTextListener(dbEdit, "db");
+		setMainChangeTextListener(portEdit, "dbPort");
+		setMainChangeTextListener(hostEdit, "dbHost");
+		setMainChangeTextListener(loginEdit, "dbUser");
+		setPasswordChangeListener(passwordEdit, "dbPassword");
 	}
 
 	/**
@@ -53,39 +73,15 @@ public class Converter extends javax.swing.JFrame {
 	 */
 	private void setExecEnabled() {
 
-		String srcFileName = dbFileEdit.getText();
-		String dstDirName = dstDirEdit.getText();
-		String srcDirName = srcDirEdit.getText();
-		if (srcFileName.isEmpty() || dstDirName.isEmpty()) {
+		if (props.dbFileName.isEmpty() || props.dstDir.isEmpty()) {
 			convertButton.setEnabled(false);
 		} else {
-			Path srcFile = Paths.get(srcFileName);
+			Path srcFile = Paths.get(props.dbFileName);
 			convertButton.setEnabled(Files.isRegularFile(srcFile) && Files.isReadable(srcFile)
-					&& Files.isDirectory(Paths.get(dstDirName))
-					&& (srcDirName.isEmpty() || Files.isDirectory(Paths.get(srcDirName))));
+					&& Files.isDirectory(Paths.get(props.dstDir))
+					&& (props.srcPdfDir.isEmpty() || Files.isDirectory(Paths.get(props.srcPdfDir))));
 		}
-		saveToDBButton.setEnabled(!dstDirName.isEmpty() && Files.isDirectory(Paths.get(dstDirName)));
-	}
-
-	private void setChangeTextListener(JTextField field) {
-		field.getDocument().addDocumentListener(new DocumentListener() {
-
-			@Override
-			public void insertUpdate(DocumentEvent e) {
-				setExecEnabled();
-			}
-
-			@Override
-			public void removeUpdate(DocumentEvent e) {
-				setExecEnabled();
-			}
-
-			@Override
-			public void changedUpdate(DocumentEvent e) {
-				setExecEnabled();
-			}
-		});
-
+		saveToDBButton.setEnabled(!props.dstDir.isEmpty() && Files.isDirectory(Paths.get(props.dstDir)));
 	}
 
 	/**
@@ -168,8 +164,13 @@ public class Converter extends javax.swing.JFrame {
 
         jLabel1.setText("Драйвер:");
 
-        driverBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "org.postgresql.Driver" }));
+        driverBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "org.postgresql.Driver", "oracle.jdbc.OracleDriver", "com.mysql.jdbc.Driver" }));
         driverBox.setEnabled(false);
+        driverBox.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                driverChanged(evt);
+            }
+        });
 
         jLabel2.setText("Сервер:");
 
@@ -393,19 +394,11 @@ public class Converter extends javax.swing.JFrame {
     }//GEN-LAST:event_srcDirChooseActionPerformed
 
     private void convertButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_convertButtonActionPerformed
-		dbFileEdit.setEditable(false);
-		srcDirEdit.setEditable(false);
-		dstDirEdit.setEditable(false);
-		final String srcDbFileName = dbFileEdit.getText();
-		final String srcDirPdfName = srcDirEdit.getText();
-		final String dstDirName = dstDirEdit.getText();
-		dbFileEdit.setEditable(true);
-		srcDirEdit.setEditable(true);
-		dstDirEdit.setEditable(true);
-		new Worker(logPanel, srcDbFileName, srcDirPdfName, dstDirName,
-				portEdit.getText(), (String) driverBox.getItemAt(driverBox.getSelectedIndex()),
-				hostEdit.getText(), loginEdit.getText(),
-				new String(passwordEdit.getPassword()), dbEdit.getText()).start();
+		try {
+			new Worker(logPanel, props.clone()).start();
+		} catch (CloneNotSupportedException ex) {
+			Logger.getLogger(Converter.class.getName()).log(Level.SEVERE, null, ex);
+		}
 
     }//GEN-LAST:event_convertButtonActionPerformed
 
@@ -451,6 +444,12 @@ public class Converter extends javax.swing.JFrame {
 		enableDisableDbProps(evt.getStateChange() == ItemEvent.SELECTED);
     }//GEN-LAST:event_dbPropsCheckItemStateChanged
 
+    private void driverChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_driverChanged
+		if (evt.getStateChange() == ItemEvent.SELECTED) {
+			props.dbDriver = evt.getItem().toString();
+		}
+    }//GEN-LAST:event_driverChanged
+
 	/**
 	 * Включает или отключает доступность изменения настроек подключиения к БД
 	 * со справочниками.
@@ -464,6 +463,7 @@ public class Converter extends javax.swing.JFrame {
 		loginEdit.setEnabled(stat);
 		passwordEdit.setEnabled(stat);
 		dbEdit.setEnabled(stat);
+		driverBox.setEnabled(stat);
 	}
 
 	/**
@@ -588,5 +588,89 @@ public class Converter extends javax.swing.JFrame {
 				+ "/" + beanName + "!" + viewClassName;
 
 		remoteBean = (LoaderRemote) context.lookup(connectionName);
+	}
+
+	private void setConfigValue(JTextField fieldSource, String fieldName) {
+		try {
+			props.getClass().getDeclaredField(fieldName).set(props, fieldSource.getText());
+		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException ex) {
+			Logger.getLogger(Converter.class.getName()).log(Level.SEVERE, null, ex);
+		}
+
+	}
+
+	private void setPasswordValue(JPasswordField fieldSource, String fieldName) {
+		try {
+			props.getClass().getDeclaredField(fieldName).set(props, new String(fieldSource.getPassword()));
+		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException ex) {
+			Logger.getLogger(Converter.class.getName()).log(Level.SEVERE, null, ex);
+		}
+
+	}
+
+	private void setMainChangeTextListener(final JTextField field, final String fieldName) {
+		field.getDocument().addDocumentListener(new DocumentListener() {
+
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				setConfigValue(field, fieldName);
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				setConfigValue(field, fieldName);
+			}
+
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+				setConfigValue(field, fieldName);
+			}
+		});
+
+	}
+
+	private void setPasswordChangeListener(final JPasswordField field, final String fieldName) {
+		field.getDocument().addDocumentListener(new DocumentListener() {
+
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				setPasswordValue(field, fieldName);
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				setPasswordValue(field, fieldName);
+			}
+
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+				setPasswordValue(field, fieldName);
+			}
+		});
+
+	}
+
+	private void setExtendedChangeTextListener(final JTextField field, final String fieldName) {
+		field.getDocument().addDocumentListener(new DocumentListener() {
+
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				setConfigValue(field, fieldName);
+				setExecEnabled();
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				setConfigValue(field, fieldName);
+				setExecEnabled();
+			}
+
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+				setConfigValue(field, fieldName);
+				setExecEnabled();
+			}
+		});
+
 	}
 }

@@ -16,6 +16,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.Persistence;
 import javax.swing.JTextArea;
 import org.apache.commons.io.FileUtils;
+import ru.insoft.archive.config.Config;
 import ru.insoft.archive.db.entity.access.Journal;
 import ru.insoft.archive.db.entity.dict.DescriptorValue;
 import ru.insoft.archive.db.entity.result.Case;
@@ -27,6 +28,10 @@ import ru.insoft.archive.db.entity.result.Document;
  */
 public class Worker extends Thread {
 
+	/**
+	 * Настройки 
+	 */
+	private final Config config;
 	// Коды для групп справочников
 	/**
 	 * Тип архивного дела
@@ -55,60 +60,28 @@ public class Worker extends Thread {
 	 */
 	private final JTextArea logPanel;
 	/**
-	 * путь к файлу БД Access
-	 */
-	private final String srcDbFileName;
-	/**
-	 * путь к папке с pdf файлами, на которые есть ссылки в БД Access
-	 */
-	private final String srcDirPdfName;
-	/**
-	 * путь к папке куда следует поместить преобразованные данные и pdf файлы.
-	 * преобразованные данные в dstDirName/data, pdf файлы в dstDirName/files
-	 */
-	private final String dstDirName;
-	/**
 	 * Json builder для получения json представления объектов
 	 */
 	private final Gson gson;
 
-	// Настройки подключения к БД справочников
-	private final String dbPort;
-	private final String dbDriver;
-	private final String dbHost;
-	private final String dbUser;
-	private final String dbPassword;
-	private final String db;
 
-	public Worker(JTextArea logPanel, String srcDbFileName,
-			String srcDirPdfName, String dstDirName,
-			String dbPort, String dbDriver, String dbHost, String dbUser,
-			String dbPassword, String db) {
+
+	public Worker(JTextArea logPanel, Config config) {
 		this.logPanel = logPanel;
-		this.srcDbFileName = srcDbFileName;
-		this.srcDirPdfName = srcDirPdfName;
-		this.dstDirName = dstDirName;
 
-		this.dbPort = dbPort;
-		this.dbDriver = dbDriver;
-		this.dbHost = dbHost;
-		this.dbUser = dbUser;
-		this.dbPassword = dbPassword;
-		this.db = db;
-
+		this.config = config;
 		gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.PRIVATE)
 				.setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
-
 	}
 
 	@Override
 	public void run() {
 		try {
-			convertData(srcDbFileName, Paths.get(dstDirName, "data"));
-			log("data from " + srcDbFileName + " have been converted and placed into " + dstDirName);
-			if (!srcDirPdfName.isEmpty()) {
-				copyPdf(srcDirPdfName, Paths.get(dstDirName, "files"));
-				log("pdf files from " + srcDirPdfName + " have been copied to " + dstDirName);
+			convertData(config.dbFileName, Paths.get(config.dstDir, "data"));
+			log("data from " + config.dbFileName + " have been converted and placed into " + config.dstDir);
+			if (!config.srcPdfDir.isEmpty()) {
+				copyPdf(config.srcPdfDir, Paths.get(config.dstDir, "files"));
+				log("pdf files from " + config.srcPdfDir + " have been copied to " + config.dstDir);
 			}
 		} catch (final Exception e) {
 			log(e.getMessage());
@@ -145,29 +118,32 @@ public class Worker extends Thread {
 				.createEntityManager();
 
 		props = new Properties();
-		props.put("javax.persistence.jdbc.url", "jdbc:postgresql://" + dbHost + ":" + dbPort + "/" + db);
-		props.put("javax.persistence.jdbc.password", dbPassword);
-		props.put("javax.persistence.jdbc.user", dbUser);
-		props.put("javax.persistence.jdbc.driver", dbDriver);
+		props.put("javax.persistence.jdbc.url", "jdbc:postgresql://" + config.dbHost + ":" + config.dbPort + "/" + config.db);
+		props.put("javax.persistence.jdbc.password", config.dbPassword);
+		props.put("javax.persistence.jdbc.user", config.dbUser);
+		props.put("javax.persistence.jdbc.driver", config.dbDriver);
 		EntityManager emDict = Persistence.createEntityManagerFactory("Dict", props)
 				.createEntityManager();
 
-		if (caseTypeCodes.isEmpty())
+		if (caseTypeCodes.isEmpty()) {
 			fillDict(emDict, CASE_TYPE, caseTypeCodes);
-		if (caseStoreLifeCodes.isEmpty())
+		}
+		if (caseStoreLifeCodes.isEmpty()) {
 			fillDict(emDict, CASE_STORE_LIFE, caseStoreLifeCodes);
-		if (toporefCodes.isEmpty())
+		}
+		if (toporefCodes.isEmpty()) {
 			fillDict(emDict, TOPOREF, toporefCodes);
-		if (docTypeCodes.isEmpty())
+		}
+		if (docTypeCodes.isEmpty()) {
 			fillDict(emDict, DOCUMENT_TYPE, docTypeCodes);
+		}
 
 		/*
-		showDicts(caseTypeCodes, "Case Type");
-		showDicts(caseStoreLifeCodes, "Case Store Life");
-		showDicts(toporefCodes, "Toporef");
-		showDicts(docTypeCodes, "Document Type");
-		*/
-
+		 showDicts(caseTypeCodes, "Case Type");
+		 showDicts(caseStoreLifeCodes, "Case Store Life");
+		 showDicts(toporefCodes, "Toporef");
+		 showDicts(docTypeCodes, "Document Type");
+		 */
 		Map<String, Case> cases = new HashMap<>();
 
 		// Для вестника ВККС
@@ -176,8 +152,8 @@ public class Worker extends Thread {
 			String caseNumber = caseTypeAttrCodes.get(caseType.trim()) + "-" + journal.getCaseNumber();
 			Case acase = cases.get(caseNumber);
 
-			if (acase == null){
-				acase = new Case(caseNumber, caseTypeCodes.get(caseType.trim()), 
+			if (acase == null) {
+				acase = new Case(caseNumber, caseTypeCodes.get(caseType.trim()),
 						caseStoreLifeCodes.get(journal.getStoreLife().trim()),
 						journal.getCaseTitle(), journal.getRemark());
 				cases.put(caseNumber, acase);
@@ -186,10 +162,10 @@ public class Worker extends Thread {
 			String graph = journal.getGraph();
 			graph = graph.substring(0, graph.indexOf('#'));
 
-			Document doc = new Document(journal.getDocNumber(), 
-					docTypeCodes.get(journal.getDocType().trim()), 
-					journal.getDocTitle(), journal.getDocPages(), 
-					journal.getDocDate(), journal.getRemark(), 
+			Document doc = new Document(journal.getDocNumber(),
+					docTypeCodes.get(journal.getDocType().trim()),
+					journal.getDocTitle(), journal.getDocPages(),
+					journal.getDocDate(), journal.getRemark(),
 					journal.getCourt(), journal.getFio(), graph);
 
 			acase.addDocument(doc);
@@ -215,24 +191,26 @@ public class Worker extends Thread {
 
 	/**
 	 * Заполняет справочники из базы
-	 * @param emDict entityManager 
-	 * @param code  код для группы значений справочника
+	 *
+	 * @param emDict entityManager
+	 * @param code код для группы значений справочника
 	 * @param codes словарь для найденных значений - кодов
 	 */
 	private void fillDict(EntityManager emDict, String code, Map<String, String> codes) {
-		boolean caseType= code.equals(CASE_TYPE);
-		for( DescriptorValue value : emDict.createNamedQuery("DescriptorValue.findByGroup", DescriptorValue.class)
+		boolean caseType = code.equals(CASE_TYPE);
+		for (DescriptorValue value : emDict.createNamedQuery("DescriptorValue.findByGroup", DescriptorValue.class)
 				.setParameter("code", code).getResultList()) {
-			codes.put(value.getFullValue(), value.getValueCode());	
-			if (caseType)
-				caseTypeAttrCodes.put(value.getFullValue(), 
+			codes.put(value.getFullValue(), value.getValueCode());
+			if (caseType) {
+				caseTypeAttrCodes.put(value.getFullValue(),
 						value.getDescriptorValueAttrCollection().get(0).getAttrValue());
+			}
 		}
 	}
 
 	private void showDicts(Map<String, String> codes, String msg) {
 		System.out.println("=================" + msg + "=====================");
-		for (String key : codes.keySet()){
+		for (String key : codes.keySet()) {
 			System.out.println(key + " - " + codes.get(key));
 		}
 		System.out.println("========================================");
