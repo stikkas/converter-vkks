@@ -1,8 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package ru.insoft.archive.db;
 
 import java.awt.event.ItemEvent;
@@ -55,6 +51,7 @@ public class Converter extends javax.swing.JFrame {
 		props.dbPort = portEdit.getText();
 		props.dbHost = hostEdit.getText();
 		props.dbDriver = (String)driverBox.getItemAt(driverBox.getSelectedIndex());
+		props.httpPort = httpPortEdit.getText();
 
 		chooser = new JFileChooser();
 		chooser.setAcceptAllFileFilterUsed(false);
@@ -65,6 +62,7 @@ public class Converter extends javax.swing.JFrame {
 		setMainChangeTextListener(portEdit, "dbPort");
 		setMainChangeTextListener(hostEdit, "dbHost");
 		setMainChangeTextListener(loginEdit, "dbUser");
+		setMainChangeTextListener(httpPortEdit, "httpPort");
 		setPasswordChangeListener(passwordEdit, "dbPassword");
 	}
 
@@ -119,6 +117,8 @@ public class Converter extends javax.swing.JFrame {
         logPanel = new javax.swing.JTextArea();
         saveToDBButton = new javax.swing.JButton();
         httpCheckBox = new javax.swing.JCheckBox();
+        httpPortEdit = new javax.swing.JTextField();
+        jLabel7 = new javax.swing.JLabel();
 
         jToggleButton1.setText("jToggleButton1");
 
@@ -282,6 +282,16 @@ public class Converter extends javax.swing.JFrame {
         });
 
         httpCheckBox.setText("HTTP клиент");
+        httpCheckBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                httpCheckBoxActionPerformed(evt);
+            }
+        });
+
+        httpPortEdit.setText("8080");
+        httpPortEdit.setEnabled(false);
+
+        jLabel7.setText("Порт:");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -296,14 +306,17 @@ public class Converter extends javax.swing.JFrame {
                     .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jScrollPane1))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addComponent(dbFileChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(dstDirChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(srcDirChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(convertButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(saveToDBButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addComponent(httpCheckBox, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(dbFileChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(dstDirChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(srcDirChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(convertButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(saveToDBButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(httpCheckBox, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jLabel7)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(httpPortEdit)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -331,6 +344,10 @@ public class Converter extends javax.swing.JFrame {
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 228, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(httpPortEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel7))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(httpCheckBox)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(saveToDBButton)))
@@ -411,7 +428,7 @@ public class Converter extends javax.swing.JFrame {
 		String dstDir = dstDirEdit.getText();
 		if (httpCheckBox.isSelected()) { // Выполняем заливку через http 
 			HttpClient client = new DefaultHttpClient();
-			HttpPost post = new HttpPost("http://localhost:8989/ea-vkks-web/load");
+			HttpPost post = new HttpPost("http://localhost:" + props.httpPort + "/ea-vkks-web/load");
 
 			try {
 				post.addHeader("Accept", "text/plain");
@@ -449,6 +466,10 @@ public class Converter extends javax.swing.JFrame {
 			props.dbDriver = evt.getItem().toString();
 		}
     }//GEN-LAST:event_driverChanged
+
+    private void httpCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_httpCheckBoxActionPerformed
+		httpPortEdit.setEnabled(httpCheckBox.isSelected());
+    }//GEN-LAST:event_httpCheckBoxActionPerformed
 
 	/**
 	 * Включает или отключает доступность изменения настроек подключиения к БД
@@ -513,12 +534,14 @@ public class Converter extends javax.swing.JFrame {
     private javax.swing.JTextField dstDirEdit;
     private javax.swing.JTextField hostEdit;
     private javax.swing.JCheckBox httpCheckBox;
+    private javax.swing.JTextField httpPortEdit;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JToggleButton jToggleButton1;
