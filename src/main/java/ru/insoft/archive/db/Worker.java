@@ -12,6 +12,8 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.persistence.EntityManager;
 import javax.persistence.Persistence;
 import javax.swing.JTextArea;
@@ -21,6 +23,7 @@ import ru.insoft.archive.db.entity.access.Journal;
 import ru.insoft.archive.db.entity.dict.DescriptorValue;
 import ru.insoft.archive.db.entity.result.Case;
 import ru.insoft.archive.db.entity.result.Document;
+import ru.insoft.archive.db.entity.result.TopoRef;
 
 /**
  *
@@ -29,7 +32,7 @@ import ru.insoft.archive.db.entity.result.Document;
 public class Worker extends Thread {
 
 	/**
-	 * Настройки 
+	 * Настройки
 	 */
 	private final Config config;
 	// Коды для групп справочников
@@ -50,6 +53,11 @@ public class Worker extends Thread {
 	 */
 	private static final String TOPOREF = "TOPOREF";
 
+	/**
+	 * регулярное выражение для определения расположения дела
+	 */
+	private static final Pattern toporefPattern = Pattern.compile("^(?<rack>\\d+)-(?<shelf>\\d+)$");
+
 	private static final Map<String, String> caseTypeCodes = new HashMap<>();
 	private static final Map<String, String> caseStoreLifeCodes = new HashMap<>();
 	private static final Map<String, String> docTypeCodes = new HashMap<>();
@@ -63,8 +71,6 @@ public class Worker extends Thread {
 	 * Json builder для получения json представления объектов
 	 */
 	private final Gson gson;
-
-
 
 	public Worker(JTextArea logPanel, Config config) {
 		this.logPanel = logPanel;
@@ -158,7 +164,19 @@ public class Worker extends Thread {
 						journal.getCaseTitle(), journal.getRemark());
 				cases.put(caseNumber, acase);
 			}
+			// Определяем топографический указатель
+			String toporef = journal.getToporef().trim();
+			if (toporef != null && !toporef.isEmpty()) {
+				Matcher matcher = toporefPattern.matcher(toporef);
+				if (matcher.find()) {
+					acase.setToporef(new TopoRef(
+							Integer.valueOf(matcher.group("rack")),
+							Integer.valueOf(matcher.group("shelf"))));
+				} else {
+					log("Wrong format of the TopoRef: " + toporef);
+				}
 
+			}
 			String graph = journal.getGraph();
 			graph = graph.substring(0, graph.indexOf('#'));
 
