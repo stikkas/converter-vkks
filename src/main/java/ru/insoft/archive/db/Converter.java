@@ -52,6 +52,7 @@ public class Converter extends javax.swing.JFrame {
 		props.dbHost = hostEdit.getText();
 		props.dbDriver = (String)driverBox.getItemAt(driverBox.getSelectedIndex());
 		props.httpPort = httpPortEdit.getText();
+		props.caseType = caseTypeEdit.getText();
 
 		chooser = new JFileChooser();
 		chooser.setAcceptAllFileFilterUsed(false);
@@ -62,6 +63,7 @@ public class Converter extends javax.swing.JFrame {
 		setMainChangeTextListener(portEdit, "dbPort");
 		setMainChangeTextListener(hostEdit, "dbHost");
 		setMainChangeTextListener(loginEdit, "dbUser");
+		setMainChangeTextListener(caseTypeEdit, "caseType");
 		setMainChangeTextListener(httpPortEdit, "httpPort");
 		setPasswordChangeListener(passwordEdit, "dbPassword");
 	}
@@ -71,13 +73,13 @@ public class Converter extends javax.swing.JFrame {
 	 */
 	private void setExecEnabled() {
 
-		if (props.dbFileName.isEmpty() || props.dstDir.isEmpty()) {
+		if (props.dbFileName.isEmpty() || props.dstDir.isEmpty() || props.srcPdfDir.isEmpty()) {
 			convertButton.setEnabled(false);
 		} else {
 			Path srcFile = Paths.get(props.dbFileName);
 			convertButton.setEnabled(Files.isRegularFile(srcFile) && Files.isReadable(srcFile)
 					&& Files.isDirectory(Paths.get(props.dstDir))
-					&& (props.srcPdfDir.isEmpty() || Files.isDirectory(Paths.get(props.srcPdfDir))));
+					&& Files.isDirectory(Paths.get(props.srcPdfDir)));
 		}
 		saveToDBButton.setEnabled(!props.dstDir.isEmpty() && Files.isDirectory(Paths.get(props.dstDir)));
 	}
@@ -119,6 +121,8 @@ public class Converter extends javax.swing.JFrame {
         httpCheckBox = new javax.swing.JCheckBox();
         httpPortEdit = new javax.swing.JTextField();
         jLabel7 = new javax.swing.JLabel();
+        caseTypeEdit = new javax.swing.JTextField();
+        caseTypeBox = new javax.swing.JCheckBox();
 
         jToggleButton1.setText("jToggleButton1");
 
@@ -217,7 +221,7 @@ public class Converter extends javax.swing.JFrame {
                     .addComponent(jLabel5, javax.swing.GroupLayout.Alignment.TRAILING))
                 .addGap(18, 18, 18)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(driverBox, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(driverBox, 0, 338, Short.MAX_VALUE)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addComponent(portEdit, javax.swing.GroupLayout.DEFAULT_SIZE, 79, Short.MAX_VALUE)
@@ -293,6 +297,16 @@ public class Converter extends javax.swing.JFrame {
 
         jLabel7.setText("Порт:");
 
+        caseTypeEdit.setToolTipText("Используется если в исходных данных нет типа дела");
+        caseTypeEdit.setEnabled(false);
+
+        caseTypeBox.setText("Тип дела");
+        caseTypeBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                caseTypeBoxActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -306,42 +320,51 @@ public class Converter extends javax.swing.JFrame {
                     .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jScrollPane1))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(dbFileChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(dstDirChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(srcDirChoose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(convertButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(saveToDBButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(httpCheckBox, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jLabel7)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(httpPortEdit)))
+                        .addComponent(httpPortEdit))
+                    .addComponent(caseTypeEdit)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(httpCheckBox, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(caseTypeBox))
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(dbFileEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(dbFileChoose))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(srcDirEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(srcDirChoose))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(dstDirChoose)
+                    .addComponent(dstDirEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(dbFileEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(dbFileChoose))
+                        .addComponent(caseTypeEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(srcDirEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(srcDirChoose))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(dstDirChoose)
-                            .addComponent(dstDirEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(convertButton))
+                        .addComponent(caseTypeBox)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(convertButton))
+                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 228, Short.MAX_VALUE)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 221, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -471,6 +494,10 @@ public class Converter extends javax.swing.JFrame {
 		httpPortEdit.setEnabled(httpCheckBox.isSelected());
     }//GEN-LAST:event_httpCheckBoxActionPerformed
 
+    private void caseTypeBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_caseTypeBoxActionPerformed
+		caseTypeEdit.setEnabled(caseTypeBox.isSelected());
+    }//GEN-LAST:event_caseTypeBoxActionPerformed
+
 	/**
 	 * Включает или отключает доступность изменения настроек подключиения к БД
 	 * со справочниками.
@@ -524,6 +551,8 @@ public class Converter extends javax.swing.JFrame {
 	}
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JCheckBox caseTypeBox;
+    private javax.swing.JTextField caseTypeEdit;
     private javax.swing.JButton convertButton;
     private javax.swing.JTextField dbEdit;
     private javax.swing.JButton dbFileChoose;

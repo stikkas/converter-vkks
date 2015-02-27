@@ -2,13 +2,14 @@ package ru.insoft.archive.db;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.itextpdf.text.pdf.PdfReader;
 import java.awt.EventQueue;
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -17,7 +18,6 @@ import java.util.regex.Pattern;
 import javax.persistence.EntityManager;
 import javax.persistence.Persistence;
 import javax.swing.JTextArea;
-import org.apache.commons.io.FileUtils;
 import ru.insoft.archive.config.Config;
 import ru.insoft.archive.db.entity.access.Journal;
 import ru.insoft.archive.db.entity.dict.DescriptorValue;
@@ -85,10 +85,6 @@ public class Worker extends Thread {
 		try {
 			convertData(config.dbFileName, Paths.get(config.dstDir, "data"));
 			log("data from " + config.dbFileName + " have been converted and placed into " + config.dstDir);
-			if (!config.srcPdfDir.isEmpty()) {
-				copyPdf(config.srcPdfDir, Paths.get(config.dstDir, "files"));
-				log("pdf files from " + config.srcPdfDir + " have been copied to " + config.dstDir);
-			}
 		} catch (final Exception e) {
 			log(e.getMessage());
 		}
@@ -152,21 +148,35 @@ public class Worker extends Thread {
 		 */
 		Map<String, Case> cases = new HashMap<>();
 
-		// Для вестника ВККС
+		int caseIndexNumber = 1;
 		for (Journal journal : emAccess.createNamedQuery("Journal.findAll", Journal.class).getResultList()) {
-			String caseType = journal.getCaseType();
-			String caseNumber = caseTypeAttrCodes.get(caseType.trim()) + "-" + journal.getCaseNumber();
+			String caseType = journal.getCaseType().trim();
+			if (caseType.isEmpty()) {
+				caseType = config.caseType;
+			}
+			String prefix = caseTypeAttrCodes.get(caseType);
+			if (prefix==null) {
+				log(caseType + " has no prefix! Skip.");
+				continue;
+			}
+			String caseNumber = journal.getCaseNumber().trim();
+			if (caseNumber.isEmpty()) {
+			 	caseNumber =  prefix + "-" + caseIndexNumber++;
+			} else {
+			 	caseNumber =  prefix + "-" + caseNumber;
+			}
+
 			Case acase = cases.get(caseNumber);
 
 			if (acase == null) {
-				acase = new Case(caseNumber, caseTypeCodes.get(caseType.trim()),
+				acase = new Case(caseNumber, caseTypeCodes.get(caseType),
 						caseStoreLifeCodes.get(journal.getStoreLife().trim()),
 						journal.getCaseTitle(), journal.getRemark());
 				cases.put(caseNumber, acase);
 			}
 			// Определяем топографический указатель
 			String toporef = journal.getToporef().trim();
-			if (toporef != null && !toporef.isEmpty()) {
+			if (!toporef.isEmpty()) {
 				Matcher matcher = toporefPattern.matcher(toporef);
 				if (matcher.find()) {
 					acase.setToporef(new TopoRef(
@@ -177,12 +187,41 @@ public class Worker extends Thread {
 				}
 
 			}
+			// пока два возможных формата полученных путей к pdf:
+			// 1 - имя_файла#ссылка
+			// 2 - директория\имя_файла
 			String graph = journal.getGraph();
-			graph = graph.substring(0, graph.indexOf('#'));
+			Path srcFileName;
+			int index = graph.indexOf('#');
+			if (index != -1) {
+				graph = graph.substring(0, index);
+				srcFileName = Paths.get(config.srcPdfDir, graph);
+			} else {
+				index = graph.indexOf("\\");
+				if (index != -1) {
+					String dirname = graph.substring(0, index);
+					graph = graph.substring(index + 1);
+					srcFileName = Paths.get(config.srcPdfDir, dirname, graph);
+				} else {
+					srcFileName = Paths.get(config.srcPdfDir, graph);
+				}
+			}
+			graph = caseNumber + "_" + graph;
+			Path dstFileName = Paths.get(config.dstDir, "files", graph);
+			copyPdf(srcFileName, dstFileName);
+			Integer pages = journal.getDocPages();
+			if (pages == null) { // В некоторых случаях может быть не указано кол-во страниц
+				pages = getPagesOfPdf(dstFileName.toString());
+			}
 
-			Document doc = new Document(journal.getDocNumber(),
+			String docNumber = journal.getDocNumber().trim();
+			if (docNumber.isEmpty()) {// если не указан номер документа то "б/н" 
+				docNumber = "б/н";
+			}
+
+			Document doc = new Document(docNumber,
 					docTypeCodes.get(journal.getDocType().trim()),
-					journal.getDocTitle(), journal.getDocPages(),
+					journal.getDocTitle(), pages,
 					journal.getDocDate(), journal.getRemark(),
 					journal.getCourt(), journal.getFio(), graph);
 
@@ -198,13 +237,19 @@ public class Worker extends Thread {
 	}
 
 	/**
-	 * Копирует pdf файлы из исходной директории в директроию назначения
+	 * Копирует pdf файлы из исходной директории в директроию назначения Метод
+	 * предполагает, что srcPdfDir задана
 	 *
-	 * @param srcDirPdfName директория с файлами pdf
-	 * @param dstDirName директория назначения
+	 * @param srcPdfName путь к исходнуму файлу
+	 * @param srcPdfName путь к файлу назначения
 	 */
-	private void copyPdf(String srcDirPdfName, Path dstDirName) throws IOException {
-		FileUtils.copyDirectory(new File(srcDirPdfName), dstDirName.toFile());
+	private void copyPdf(Path srcPdfName, Path dstPdfName) throws IOException {
+		try {
+			Files.copy(srcPdfName, dstPdfName, StandardCopyOption.REPLACE_EXISTING);
+			log(srcPdfName + " have been copied to " + dstPdfName);
+		} catch (IOException ex) {
+			log(srcPdfName + ": " + ex.getMessage());
+		}
 	}
 
 	/**
@@ -216,7 +261,9 @@ public class Worker extends Thread {
 	 */
 	private void fillDict(EntityManager emDict, String code, Map<String, String> codes) {
 		boolean caseType = code.equals(CASE_TYPE);
-		for (DescriptorValue value : emDict.createNamedQuery("DescriptorValue.findByGroup", DescriptorValue.class)
+
+		for (DescriptorValue value : emDict.createNamedQuery("DescriptorValue.findByGroup", DescriptorValue.class
+		)
 				.setParameter("code", code).getResultList()) {
 			codes.put(value.getFullValue(), value.getValueCode());
 			if (caseType) {
@@ -232,5 +279,20 @@ public class Worker extends Thread {
 			System.out.println(key + " - " + codes.get(key));
 		}
 		System.out.println("========================================");
+	}
+
+	/**
+	 * Получает кол-во страниц в pdf документе
+	 *
+	 * @param filename имя файла
+	 * @return количество страниц
+	 */
+	private int getPagesOfPdf(String filename) {
+		try {
+			return new PdfReader(filename).getNumberOfPages();
+		} catch (IOException ex) {
+			log(filename + ": " + ex.getMessage());
+			return 0;
+		}
 	}
 }
