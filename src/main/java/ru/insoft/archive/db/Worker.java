@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -83,9 +84,10 @@ public class Worker extends Thread {
 	@Override
 	public void run() {
 		try {
-			convertData(config.dbFileName, Paths.get(config.dstDir, "data"));
+			convertData();
 			log("data from " + config.dbFileName + " have been converted and placed into " + config.dstDir);
 		} catch (final Exception e) {
+			e.printStackTrace();
 			log(e.getMessage());
 		}
 	}
@@ -108,14 +110,12 @@ public class Worker extends Thread {
 	/**
 	 * Преобразует данные из файла Access в файлы json
 	 *
-	 * @param srcDbFileName база данных MS Access
-	 * @param dstDirName директория назначения для json-файлов
 	 */
-	private void convertData(String srcDbFileName, Path dstDirName) throws IOException {
-		Files.createDirectories(dstDirName);
-
+	private void convertData() throws IOException {
+		Files.createDirectories(Paths.get(config.dstDir, "data"));
+		Files.createDirectories(Paths.get(config.dstDir, "files"));
 		Properties props = new Properties();
-		props.put("javax.persistence.jdbc.url", "jdbc:ucanaccess://" + srcDbFileName);
+		props.put("javax.persistence.jdbc.url", "jdbc:ucanaccess://" + config.dbFileName);
 		EntityManager emAccess = Persistence.createEntityManagerFactory("Access", props)
 				.createEntityManager();
 
@@ -146,38 +146,37 @@ public class Worker extends Thread {
 		 showDicts(toporefCodes, "Toporef");
 		 showDicts(docTypeCodes, "Document Type");
 		 */
-		Map<String, Case> cases = new HashMap<>();
-
-		int caseIndexNumber = 1;
+//		Map<String, Case> cases = new HashMap<>();
+//		List<Case> cases = new ArrayList<>();
 		for (Journal journal : emAccess.createNamedQuery("Journal.findAll", Journal.class).getResultList()) {
 			String caseType = journal.getCaseType().trim();
-			if (caseType.isEmpty()) {
-				caseType = config.caseType;
-			}
+//			if (caseType.isEmpty()) {
+//				caseType = config.caseType;
+//			}
 			String prefix = caseTypeAttrCodes.get(caseType);
-			if (prefix==null) {
+			if (prefix == null) {
 				log(caseType + " has no prefix! Skip.");
 				continue;
 			}
-			String caseNumber = journal.getCaseNumber().trim();
-			if (caseNumber.isEmpty()) {
-			 	caseNumber =  prefix + "-" + caseIndexNumber++;
+			String caseNumber = journal.getCaseNumber();
+			if (caseNumber == null || caseNumber.isEmpty()) {
+				caseNumber = prefix + "-" + journal.getId();
 			} else {
-			 	caseNumber =  prefix + "-" + caseNumber;
+				caseNumber = prefix + "-" + caseNumber.trim();
 			}
+//			Case acase = cases.get(caseNumber);
 
-			Case acase = cases.get(caseNumber);
-
-			if (acase == null) {
-				acase = new Case(caseNumber, caseTypeCodes.get(caseType),
-						caseStoreLifeCodes.get(journal.getStoreLife().trim()),
-						journal.getCaseTitle(), journal.getRemark());
-				cases.put(caseNumber, acase);
-			}
+//			if (acase == null) {
+			Case acase = new Case(caseNumber, caseTypeCodes.get(caseType),
+					caseStoreLifeCodes.get(journal.getStoreLife().trim()),
+					journal.getCaseTitle(), journal.getRemark());
+//				cases.add(acase);
+//				cases.put(caseNumber, acase);
+//			}
 			// Определяем топографический указатель
-			String toporef = journal.getToporef().trim();
-			if (!toporef.isEmpty()) {
-				Matcher matcher = toporefPattern.matcher(toporef);
+			String toporef = journal.getToporef();
+			if (toporef != null && !toporef.isEmpty()) {
+				Matcher matcher = toporefPattern.matcher(toporef.trim());
 				if (matcher.find()) {
 					acase.setToporef(new TopoRef(
 							Integer.valueOf(matcher.group("rack")),
@@ -191,16 +190,24 @@ public class Worker extends Thread {
 			// 1 - имя_файла#ссылка
 			// 2 - директория\имя_файла
 			String graph = journal.getGraph();
+
+			if (graph.startsWith("#")) {
+				graph = graph.substring(1);
+			}
+			if (graph.endsWith("#")) {
+				graph = graph.substring(0, graph.length() - 1);
+			}
+
 			Path srcFileName;
-			int index = graph.indexOf('#');
-			if (index != -1) {
-				graph = graph.substring(0, index);
+			int idx = graph.indexOf('#');
+			if (idx != -1) {
+				graph = graph.substring(0, idx);
 				srcFileName = Paths.get(config.srcPdfDir, graph);
 			} else {
-				index = graph.indexOf("\\");
-				if (index != -1) {
-					String dirname = graph.substring(0, index);
-					graph = graph.substring(index + 1);
+				idx = graph.indexOf("\\");
+				if (idx != -1) {
+					String dirname = graph.substring(0, idx);
+					graph = graph.substring(idx + 1);
 					srcFileName = Paths.get(config.srcPdfDir, dirname, graph);
 				} else {
 					srcFileName = Paths.get(config.srcPdfDir, graph);
@@ -213,27 +220,32 @@ public class Worker extends Thread {
 			if (pages == null) { // В некоторых случаях может быть не указано кол-во страниц
 				pages = getPagesOfPdf(dstFileName.toString());
 			}
-
-			String docNumber = journal.getDocNumber().trim();
-			if (docNumber.isEmpty()) {// если не указан номер документа то "б/н" 
+			String docNumber = journal.getDocNumber();
+			if (docNumber == null || docNumber.trim().isEmpty()) {// если не указан номер документа то "б/н" 
 				docNumber = "б/н";
 			}
 
+			Date docDate = journal.getDocDate();
+			if (docDate == null ) {
+				docDate = new Date();
+			}
 			Document doc = new Document(docNumber,
 					docTypeCodes.get(journal.getDocType().trim()),
 					journal.getDocTitle(), pages,
-					journal.getDocDate(), journal.getRemark(),
+					docDate, journal.getRemark(),
 					journal.getCourt(), journal.getFio(), graph);
 
 			acase.addDocument(doc);
+			Files.write(Paths.get(config.dstDir, "data", caseNumber + ".json"), gson.toJson(acase).getBytes());
 		}
 
 		emDict.close();
 		emAccess.close();
-		String dst = dstDirName.toString();
-		for (String key : cases.keySet()) {
-			Files.write(Paths.get(dst, key + ".json"), gson.toJson(cases.get(key)).getBytes());
-		}
+		/*
+		 for (String key : cases.keySet()) {
+		 Files.write(Paths.get(config.dstDir, "data", key + ".json"), gson.toJson(cases.get(key)).getBytes());
+		 }
+		 */
 	}
 
 	/**
@@ -246,7 +258,7 @@ public class Worker extends Thread {
 	private void copyPdf(Path srcPdfName, Path dstPdfName) throws IOException {
 		try {
 			Files.copy(srcPdfName, dstPdfName, StandardCopyOption.REPLACE_EXISTING);
-			log(srcPdfName + " have been copied to " + dstPdfName);
+//			log(srcPdfName + " have been copied to " + dstPdfName);
 		} catch (IOException ex) {
 			log(srcPdfName + ": " + ex.getMessage());
 		}

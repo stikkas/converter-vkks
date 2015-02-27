@@ -20,24 +20,28 @@ import javax.xml.bind.annotation.XmlRootElement;
 @Entity
 @Table(name = "Journal")
 @XmlRootElement
-@NamedQueries({@NamedQuery(name = "Journal.findAll", query = "SELECT j FROM Journal j")})
-	
+@NamedQueries({
+	@NamedQuery(name = "Journal.findAll", query = "SELECT j FROM Journal j"),
+	@NamedQuery(name = "Journal.findPart", query = "SELECT j FROM Journal j where j.id in (:start, :end)")
+})
+
 public class Journal implements Serializable {
+
 	private static final long serialVersionUID = 1L;
 	@Id
-    @Basic(optional = false)
-    @Column(name = "id")
+	@Basic(optional = false)
+	@Column(name = "id")
 	private Integer id;
 
 	@Column(name = "case_title")
 	String caseTitle;
 
 	@Column(name = "start_date")
-    @Temporal(TemporalType.TIMESTAMP)
+	@Temporal(TemporalType.TIMESTAMP)
 	Date startDate;
 
 	@Column(name = "end_date")
-    @Temporal(TemporalType.TIMESTAMP)
+	@Temporal(TemporalType.TIMESTAMP)
 	Date endDate;
 
 	@Column(name = "store_life")
@@ -50,7 +54,7 @@ public class Journal implements Serializable {
 	String court;
 
 	@Column(name = "doc_date")
-    @Temporal(TemporalType.TIMESTAMP)
+	@Temporal(TemporalType.TIMESTAMP)
 	Date docDate;
 
 	@Column(name = "fio")
@@ -222,6 +226,5 @@ public class Journal implements Serializable {
 	public void setCaseType(String caseType) {
 		this.caseType = caseType;
 	}
-
 
 }
