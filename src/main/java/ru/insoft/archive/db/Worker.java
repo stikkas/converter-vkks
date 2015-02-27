@@ -87,8 +87,12 @@ public class Worker extends Thread {
 			convertData();
 			log("data from " + config.dbFileName + " have been converted and placed into " + config.dstDir);
 		} catch (final Exception e) {
-			e.printStackTrace();
-			log(e.getMessage());
+			StringBuilder sb = new StringBuilder(e.getMessage());
+			sb.append("\n");
+			for (StackTraceElement el : e.getStackTrace()) {
+				sb.append("\t").append(el.toString()).append("\n");
+			}
+			log(sb.toString());
 		}
 	}
 
@@ -146,13 +150,9 @@ public class Worker extends Thread {
 		 showDicts(toporefCodes, "Toporef");
 		 showDicts(docTypeCodes, "Document Type");
 		 */
-//		Map<String, Case> cases = new HashMap<>();
-//		List<Case> cases = new ArrayList<>();
+		Map<String, Case> cases = new HashMap<>();
 		for (Journal journal : emAccess.createNamedQuery("Journal.findAll", Journal.class).getResultList()) {
-			String caseType = journal.getCaseType().trim();
-//			if (caseType.isEmpty()) {
-//				caseType = config.caseType;
-//			}
+			String caseType = journal.getCaseType();
 			String prefix = caseTypeAttrCodes.get(caseType);
 			if (prefix == null) {
 				log(caseType + " has no prefix! Skip.");
@@ -164,15 +164,17 @@ public class Worker extends Thread {
 			} else {
 				caseNumber = prefix + "-" + caseNumber.trim();
 			}
-//			Case acase = cases.get(caseNumber);
+			// Предполагаем, что у одного дела может быть несколько документов
+			// Каждая запись соответствует одному документу
+			// Если номер делу назначаем мы, тогда на один документ приходится одно дело
+			Case acase = cases.get(caseNumber);
 
-//			if (acase == null) {
-			Case acase = new Case(caseNumber, caseTypeCodes.get(caseType),
-					caseStoreLifeCodes.get(journal.getStoreLife().trim()),
-					journal.getCaseTitle(), journal.getRemark());
-//				cases.add(acase);
-//				cases.put(caseNumber, acase);
-//			}
+			if (acase == null) {
+				acase = new Case(caseNumber, caseTypeCodes.get(caseType),
+						caseStoreLifeCodes.get(journal.getStoreLife().trim()),
+						journal.getCaseTitle(), journal.getRemark());
+				cases.put(caseNumber, acase);
+			}
 			// Определяем топографический указатель
 			String toporef = journal.getToporef();
 			if (toporef != null && !toporef.isEmpty()) {
@@ -198,23 +200,24 @@ public class Worker extends Thread {
 				graph = graph.substring(0, graph.length() - 1);
 			}
 
+			// Определяем местоположение исходного файла pdf
 			Path srcFileName;
 			int idx = graph.indexOf('#');
 			if (idx != -1) {
-				graph = graph.substring(0, idx);
-				srcFileName = Paths.get(config.srcPdfDir, graph);
+				srcFileName = Paths.get(config.srcPdfDir, graph.substring(0, idx));
 			} else {
 				idx = graph.indexOf("\\");
 				if (idx != -1) {
-					String dirname = graph.substring(0, idx);
-					graph = graph.substring(idx + 1);
-					srcFileName = Paths.get(config.srcPdfDir, dirname, graph);
+					srcFileName = Paths.get(config.srcPdfDir, graph.substring(0, idx),
+							graph.substring(idx + 1));
 				} else {
 					srcFileName = Paths.get(config.srcPdfDir, graph);
 				}
 			}
-			graph = caseNumber + "_" + graph;
+
+			graph = caseNumber + ".pdf";
 			Path dstFileName = Paths.get(config.dstDir, "files", graph);
+			// Копируем pdf файл
 			copyPdf(srcFileName, dstFileName);
 			Integer pages = journal.getDocPages();
 			if (pages == null) { // В некоторых случаях может быть не указано кол-во страниц
@@ -226,26 +229,23 @@ public class Worker extends Thread {
 			}
 
 			Date docDate = journal.getDocDate();
-			if (docDate == null ) {
+			if (docDate == null) {
 				docDate = new Date();
 			}
 			Document doc = new Document(docNumber,
-					docTypeCodes.get(journal.getDocType().trim()),
+					docTypeCodes.get(journal.getDocType()),
 					journal.getDocTitle(), pages,
 					docDate, journal.getRemark(),
 					journal.getCourt(), journal.getFio(), graph);
 
 			acase.addDocument(doc);
-			Files.write(Paths.get(config.dstDir, "data", caseNumber + ".json"), gson.toJson(acase).getBytes());
 		}
 
 		emDict.close();
 		emAccess.close();
-		/*
-		 for (String key : cases.keySet()) {
-		 Files.write(Paths.get(config.dstDir, "data", key + ".json"), gson.toJson(cases.get(key)).getBytes());
-		 }
-		 */
+		for (String key : cases.keySet()) {
+			Files.write(Paths.get(config.dstDir, "data", key + ".json"), gson.toJson(cases.get(key)).getBytes());
+		}
 	}
 
 	/**

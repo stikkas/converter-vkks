@@ -34,7 +34,7 @@ public class Config {
 
 	private Config(String dbFileName, String dstDir, String srcPdfDir,
 			String dbPort, String dbDriver, String dbHost, String dbUser,
-			String dbPassword, String db, String httpPort, String caseType) {
+			String dbPassword, String db, String httpPort) {
 		this.dbFileName = dbFileName;
 		this.srcPdfDir = srcPdfDir;
 		this.dstDir = dstDir;
@@ -45,11 +45,10 @@ public class Config {
 		this.dbPassword = dbPassword;
 		this.db = db;
 		this.httpPort = httpPort;
-		this.caseType = caseType;
 	}
 
 	public Config() {
-		this("", "", "", "", "", "", "", "", "", "", "");
+		this("", "", "", "", "", "", "", "", "", "");
 	}
 
 	@Override
@@ -66,8 +65,7 @@ public class Config {
 		 System.out.println("db = " + db);
 		 */
 		return new Config(dbFileName, dstDir, srcPdfDir,
-				dbPort, dbDriver, dbHost, dbUser, dbPassword, db, httpPort, 
-				caseType);
+				dbPort, dbDriver, dbHost, dbUser, dbPassword, db, httpPort);
 	}
 
 }
