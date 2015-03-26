@@ -1,4 +1,3 @@
-
 package ru.insoft.archive.db;
 
 import java.awt.event.ItemEvent;
@@ -28,6 +27,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
 import ru.insoft.archive.config.Config;
+import ru.insoft.archive.eavkks.ejb.es.EsSearchHelperRemote;
 import ru.insoft.archive.eavkks.load.ejb.LoaderRemote;
 
 /**
@@ -50,7 +50,7 @@ public class Converter extends javax.swing.JFrame {
 		props.dbPassword = new String(passwordEdit.getPassword());
 		props.dbPort = portEdit.getText();
 		props.dbHost = hostEdit.getText();
-		props.dbDriver = (String)driverBox.getItemAt(driverBox.getSelectedIndex());
+		props.dbDriver = (String) driverBox.getItemAt(driverBox.getSelectedIndex());
 		props.httpPort = httpPortEdit.getText();
 
 		chooser = new JFileChooser();
@@ -119,6 +119,7 @@ public class Converter extends javax.swing.JFrame {
         httpCheckBox = new javax.swing.JCheckBox();
         httpPortEdit = new javax.swing.JTextField();
         jLabel7 = new javax.swing.JLabel();
+        createSchemeBox = new javax.swing.JCheckBox();
 
         jToggleButton1.setText("jToggleButton1");
 
@@ -217,7 +218,7 @@ public class Converter extends javax.swing.JFrame {
                     .addComponent(jLabel5, javax.swing.GroupLayout.Alignment.TRAILING))
                 .addGap(18, 18, 18)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(driverBox, 0, 398, Short.MAX_VALUE)
+                    .addComponent(driverBox, 0, 391, Short.MAX_VALUE)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addComponent(portEdit, javax.swing.GroupLayout.DEFAULT_SIZE, 79, Short.MAX_VALUE)
@@ -293,6 +294,9 @@ public class Converter extends javax.swing.JFrame {
 
         jLabel7.setText("Порт:");
 
+        createSchemeBox.setText("Создать схему");
+        createSchemeBox.setToolTipText("При выбранной опции существующая схема и файлы будут удалены");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -307,20 +311,22 @@ public class Converter extends javax.swing.JFrame {
                     .addComponent(srcDirEdit, javax.swing.GroupLayout.Alignment.TRAILING))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(dbFileChoose, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 149, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(dstDirChoose, javax.swing.GroupLayout.PREFERRED_SIZE, 149, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(srcDirChoose, javax.swing.GroupLayout.PREFERRED_SIZE, 149, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(convertButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 149, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(saveToDBButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(httpCheckBox, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(26, 26, 26))))
+                    .addComponent(createSchemeBox)
+                    .addGroup(layout.createSequentialGroup()
                         .addComponent(jLabel7)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(dbFileChoose, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 149, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(dstDirChoose, javax.swing.GroupLayout.PREFERRED_SIZE, 149, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(srcDirChoose, javax.swing.GroupLayout.PREFERRED_SIZE, 149, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(convertButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 149, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addComponent(httpPortEdit, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 104, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addComponent(saveToDBButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(layout.createSequentialGroup()
-                            .addComponent(httpCheckBox, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGap(26, 26, 26))))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(httpPortEdit, javax.swing.GroupLayout.PREFERRED_SIZE, 104, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -344,14 +350,16 @@ public class Converter extends javax.swing.JFrame {
                     .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 186, Short.MAX_VALUE)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 184, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(httpPortEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel7))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(httpCheckBox)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel7)
+                            .addComponent(httpPortEdit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(18, 18, 18)
+                        .addComponent(createSchemeBox)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(saveToDBButton)))
                 .addContainerGap())
@@ -415,7 +423,7 @@ public class Converter extends javax.swing.JFrame {
 
     private void convertButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_convertButtonActionPerformed
 		try {
-			new Worker(logPanel, props.clone()).start();
+			new Worker(logPanel, props.clone(), helperBean).start();
 		} catch (CloneNotSupportedException ex) {
 			Logger.getLogger(Converter.class.getName()).log(Level.SEVERE, null, ex);
 		}
@@ -445,15 +453,7 @@ public class Converter extends javax.swing.JFrame {
 			}
 		} else { // Делаем все через ejb бин
 			try {
-				getRemoteBean();
-			} catch (NamingException ex) {
-				JOptionPane.showMessageDialog(null, "Не могу получить удаленный бин.\n"
-						+ "Проверьте настройки подключения к серверу приложений", "Ошибка",
-						JOptionPane.ERROR_MESSAGE);
-				return;
-			}
-			try {
-				logPanel.append(remoteBean.loadRemote(dstDir) + "\n");
+				logPanel.append(remoteBean.loadRemote(dstDir, createSchemeBox.isSelected()) + "\n");
 			} catch (Exception e) {
 				logPanel.append(e.getMessage() + "\n");
 			}
@@ -522,12 +522,20 @@ public class Converter extends javax.swing.JFrame {
 				converter.setMinimumSize(converter.getSize());
 				converter.setLocationRelativeTo(null);
 				converter.setVisible(true);
+				try {
+					setBeans();
+				} catch (NamingException ex) {
+					JOptionPane.showMessageDialog(null, "Не могу получить удаленный бин.\n"
+							+ "Проверьте настройки подключения к серверу приложений", "Ошибка",
+							JOptionPane.ERROR_MESSAGE);
+				}
 			}
 		});
 	}
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton convertButton;
+    private javax.swing.JCheckBox createSchemeBox;
     private javax.swing.JTextField dbEdit;
     private javax.swing.JButton dbFileChoose;
     private javax.swing.JTextField dbFileEdit;
@@ -557,6 +565,7 @@ public class Converter extends javax.swing.JFrame {
     private javax.swing.JTextField srcDirEdit;
     // End of variables declaration//GEN-END:variables
 	private static LoaderRemote remoteBean;
+	private static EsSearchHelperRemote helperBean;
 	private File sourceFile;
 	private File destinationDir;
 	private final JFileChooser chooser;
@@ -593,7 +602,7 @@ public class Converter extends javax.swing.JFrame {
 	 *
 	 * @throws NamingException
 	 */
-	private static void getRemoteBean() throws NamingException {
+	private static void setBeans() throws NamingException {
 		final Properties jndiProperties = new Properties();
 		jndiProperties.put(Context.URL_PKG_PREFIXES, "org.jboss.ejb.client.naming");
 		jndiProperties.put("scoped.context", "true");
@@ -614,6 +623,8 @@ public class Converter extends javax.swing.JFrame {
 				+ "/" + beanName + "!" + viewClassName;
 
 		remoteBean = (LoaderRemote) context.lookup(connectionName);
+		connectionName = "ejb:/" + moduleName + "//" + "EsSearchHelperImpl!" + EsSearchHelperRemote.class.getName();
+		helperBean = (EsSearchHelperRemote) context.lookup(connectionName);
 	}
 
 	private void setConfigValue(JTextField fieldSource, String fieldName) {

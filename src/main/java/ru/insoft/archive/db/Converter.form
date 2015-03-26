@@ -42,24 +42,26 @@
               </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="103" alignment="1" groupAlignment="0" attributes="0">
-                      <Component id="jLabel7" min="-2" max="-2" attributes="0"/>
-                      <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="dbFileChoose" alignment="1" min="-2" pref="149" max="-2" attributes="0"/>
-                          <Group type="103" alignment="1" groupAlignment="0" attributes="0">
-                              <Component id="dstDirChoose" alignment="0" min="-2" pref="149" max="-2" attributes="0"/>
-                              <Component id="srcDirChoose" min="-2" pref="149" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="0" attributes="0">
+                      <Component id="dbFileChoose" alignment="1" min="-2" pref="149" max="-2" attributes="0"/>
+                      <Group type="103" alignment="1" groupAlignment="0" attributes="0">
+                          <Component id="dstDirChoose" alignment="0" min="-2" pref="149" max="-2" attributes="0"/>
+                          <Component id="srcDirChoose" min="-2" pref="149" max="-2" attributes="0"/>
+                      </Group>
+                      <Component id="convertButton" alignment="1" min="-2" pref="149" max="-2" attributes="0"/>
+                      <Group type="103" alignment="1" groupAlignment="0" max="-2" attributes="0">
+                          <Component id="saveToDBButton" alignment="1" max="32767" attributes="0"/>
+                          <Group type="102" alignment="0" attributes="0">
+                              <Component id="httpCheckBox" min="-2" pref="123" max="-2" attributes="0"/>
+                              <EmptySpace min="-2" pref="26" max="-2" attributes="0"/>
                           </Group>
-                          <Component id="convertButton" alignment="1" min="-2" pref="149" max="-2" attributes="0"/>
                       </Group>
                   </Group>
-                  <Component id="httpPortEdit" alignment="1" min="-2" pref="104" max="-2" attributes="0"/>
-                  <Group type="103" alignment="1" groupAlignment="0" max="-2" attributes="0">
-                      <Component id="saveToDBButton" alignment="1" max="32767" attributes="0"/>
-                      <Group type="102" alignment="0" attributes="0">
-                          <Component id="httpCheckBox" min="-2" pref="123" max="-2" attributes="0"/>
-                          <EmptySpace min="-2" pref="26" max="-2" attributes="0"/>
-                      </Group>
+                  <Component id="createSchemeBox" min="-2" max="-2" attributes="0"/>
+                  <Group type="102" alignment="0" attributes="0">
+                      <Component id="jLabel7" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="httpPortEdit" min="-2" pref="104" max="-2" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
@@ -91,15 +93,17 @@
               </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="jScrollPane1" pref="186" max="32767" attributes="0"/>
+                  <Component id="jScrollPane1" pref="184" max="32767" attributes="0"/>
                   <Group type="102" attributes="0">
                       <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
-                      <Group type="103" groupAlignment="3" attributes="0">
-                          <Component id="httpPortEdit" alignment="3" min="-2" max="-2" attributes="0"/>
-                          <Component id="jLabel7" alignment="3" min="-2" max="-2" attributes="0"/>
-                      </Group>
-                      <EmptySpace max="-2" attributes="0"/>
                       <Component id="httpCheckBox" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="jLabel7" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="httpPortEdit" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <Component id="createSchemeBox" min="-2" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="saveToDBButton" min="-2" max="-2" attributes="0"/>
                   </Group>
@@ -205,7 +209,7 @@
                   </Group>
                   <EmptySpace type="separate" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" attributes="0">
-                      <Component id="driverBox" alignment="0" pref="398" max="32767" attributes="0"/>
+                      <Component id="driverBox" alignment="0" pref="391" max="32767" attributes="0"/>
                       <Group type="102" attributes="0">
                           <Group type="103" groupAlignment="0" max="-2" attributes="0">
                               <Component id="portEdit" pref="79" max="32767" attributes="0"/>
@@ -402,6 +406,12 @@
     <Component class="javax.swing.JLabel" name="jLabel7">
       <Properties>
         <Property name="text" type="java.lang.String" value="&#x41f;&#x43e;&#x440;&#x442;:"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="createSchemeBox">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="&#x421;&#x43e;&#x437;&#x434;&#x430;&#x442;&#x44c; &#x441;&#x445;&#x435;&#x43c;&#x443;"/>
+        <Property name="toolTipText" type="java.lang.String" value="&#x41f;&#x440;&#x438; &#x432;&#x44b;&#x431;&#x440;&#x430;&#x43d;&#x43d;&#x43e;&#x439; &#x43e;&#x43f;&#x446;&#x438;&#x438; &#x441;&#x443;&#x449;&#x435;&#x441;&#x442;&#x432;&#x443;&#x44e;&#x449;&#x430;&#x44f; &#x441;&#x445;&#x435;&#x43c;&#x430; &#x438; &#x444;&#x430;&#x439;&#x43b;&#x44b; &#x431;&#x443;&#x434;&#x443;&#x442; &#x443;&#x434;&#x430;&#x43b;&#x435;&#x43d;&#x44b;"/>
       </Properties>
     </Component>
   </SubComponents>

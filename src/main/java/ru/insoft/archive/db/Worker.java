@@ -25,6 +25,7 @@ import ru.insoft.archive.db.entity.dict.DescriptorValue;
 import ru.insoft.archive.db.entity.result.Case;
 import ru.insoft.archive.db.entity.result.Document;
 import ru.insoft.archive.db.entity.result.TopoRef;
+import ru.insoft.archive.eavkks.ejb.es.EsSearchHelperRemote;
 
 /**
  *
@@ -32,6 +33,7 @@ import ru.insoft.archive.db.entity.result.TopoRef;
  */
 public class Worker extends Thread {
 
+	private EsSearchHelperRemote helper;
 	/**
 	 * Настройки
 	 */
@@ -73,9 +75,9 @@ public class Worker extends Thread {
 	 */
 	private final Gson gson;
 
-	public Worker(JTextArea logPanel, Config config) {
+	public Worker(JTextArea logPanel, Config config, EsSearchHelperRemote helper) {
 		this.logPanel = logPanel;
-
+		this.helper = helper;
 		this.config = config;
 		gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.PRIVATE)
 				.setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
@@ -151,6 +153,8 @@ public class Worker extends Thread {
 		 showDicts(docTypeCodes, "Document Type");
 		 */
 		Map<String, Case> cases = new HashMap<>();
+		String currentPrefix = "";
+		int index = 1;
 		for (Journal journal : emAccess.createNamedQuery("Journal.findAll", Journal.class).getResultList()) {
 			String caseType = journal.getCaseType();
 			String prefix = caseTypeAttrCodes.get(caseType);
@@ -158,9 +162,14 @@ public class Worker extends Thread {
 				log(caseType + " has no prefix! Skip.");
 				continue;
 			}
+			if (!prefix.equals(currentPrefix)) {
+				currentPrefix = prefix;
+				index = helper.queryMaxCaseNumberForPrefix(prefix) + 1;
+			}
 			String caseNumber = journal.getCaseNumber();
 			if (caseNumber == null || caseNumber.isEmpty()) {
-				caseNumber = prefix + "-" + journal.getId();
+//				caseNumber = prefix + "-" + journal.getId();
+				caseNumber = prefix + "-" + index++;
 			} else {
 				caseNumber = prefix + "-" + caseNumber.trim();
 			}
