@@ -89,8 +89,8 @@ public class Worker extends Thread {
 			convertData();
 			log("data from " + config.dbFileName + " have been converted and placed into " + config.dstDir);
 		} catch (final Exception e) {
-			StringBuilder sb = new StringBuilder(e.getMessage());
-			sb.append("\n");
+			StringBuilder sb = new StringBuilder();
+			sb.append(e.getMessage() + "\n");
 			for (StackTraceElement el : e.getStackTrace()) {
 				sb.append("\t").append(el.toString()).append("\n");
 			}
@@ -153,8 +153,15 @@ public class Worker extends Thread {
 		 showDicts(docTypeCodes, "Document Type");
 		 */
 		Map<String, Case> cases = new HashMap<>();
+		// Бывают слуючаи, что разные документы ссылаются на один и тот же файл
+		// тогда надо вести учет скопированных файлов. Но с другой стороны
+		// При удалении одного документа у нас удалится файл, на который ссылается
+		// другой документ. Исходя из этого было решено не учитывать возможность повторения
+		// файлов, и копировать все файлы, как-будто они все разные
+
 		String currentPrefix = "";
 		int index = 1;
+		long docIndex = 1;
 		for (Journal journal : emAccess.createNamedQuery("Journal.findAll", Journal.class).getResultList()) {
 			String caseType = journal.getCaseType();
 			String prefix = caseTypeAttrCodes.get(caseType);
@@ -180,7 +187,7 @@ public class Worker extends Thread {
 
 			if (acase == null) {
 				acase = new Case(caseNumber, caseTypeCodes.get(caseType),
-						caseStoreLifeCodes.get(journal.getStoreLife().trim()),
+						caseStoreLifeCodes.get(journal.getStoreLife()),
 						journal.getCaseTitle(), journal.getRemark());
 				cases.put(caseNumber, acase);
 			}
@@ -224,17 +231,18 @@ public class Worker extends Thread {
 				}
 			}
 
-			graph = caseNumber + ".pdf";
-			Path dstFileName = Paths.get(config.dstDir, "files", graph);
-			// Копируем pdf файл
-			copyPdf(srcFileName, dstFileName);
-			Integer pages = journal.getDocPages();
-			if (pages == null) { // В некоторых случаях может быть не указано кол-во страниц
-				pages = getPagesOfPdf(dstFileName.toString());
-			}
 			String docNumber = journal.getDocNumber();
 			if (docNumber == null || docNumber.trim().isEmpty()) {// если не указан номер документа то "б/н" 
 				docNumber = "б/н";
+			}
+
+			graph = caseNumber + "_" + (docIndex++) + ".pdf";
+			Path dstFileName = Paths.get(config.dstDir, "files", graph);
+			copyPdf(srcFileName, dstFileName);
+			// Копируем pdf файл
+			Integer pages = journal.getDocPages();
+			if (pages == null) { // В некоторых случаях может быть не указано кол-во страниц
+				pages = getPagesOfPdf(dstFileName.toString());
 			}
 
 			Date docDate = journal.getDocDate();

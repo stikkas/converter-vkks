@@ -35,7 +35,7 @@ public class Journal implements Serializable {
 
 	@Column(name = "case_title")
 	String caseTitle;
-
+/*
 	@Column(name = "start_date")
 	@Temporal(TemporalType.TIMESTAMP)
 	Date startDate;
@@ -43,7 +43,7 @@ public class Journal implements Serializable {
 	@Column(name = "end_date")
 	@Temporal(TemporalType.TIMESTAMP)
 	Date endDate;
-
+*/
 	@Column(name = "store_life")
 	String storeLife;
 
@@ -106,7 +106,7 @@ public class Journal implements Serializable {
 	public void setCaseTitle(String caseTitle) {
 		this.caseTitle = caseTitle;
 	}
-
+/*
 	public Date getStartDate() {
 		return startDate;
 	}
@@ -122,7 +122,7 @@ public class Journal implements Serializable {
 	public void setEndDate(Date endDate) {
 		this.endDate = endDate;
 	}
-
+*/
 	public String getStoreLife() {
 		return storeLife;
 	}
