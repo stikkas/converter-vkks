@@ -47,6 +47,7 @@
             <actionName>CUSTOM-product</actionName>
             <displayName>product</displayName>
             <goals>
+                <goal>clean</goal>
                 <goal>package</goal>
                 <goal>assembly:single</goal>
             </goals>

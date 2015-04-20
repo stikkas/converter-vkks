@@ -1,12 +1,17 @@
 package ru.insoft.archive.db.entity.result;
 
+import javax.validation.constraints.NotNull;
+
 /**
  *
  * @author Благодатских С.
  */
 public class TopoRef {
 // {"rack": 5,"shelf":17}
+
+	@NotNull(message = "Номер стелажа отсутствует")
 	Integer rack;
+	@NotNull(message = "Номер полки отсутствует")
 	Integer shelf;
 
 	public TopoRef(Integer rack, Integer shelf) {

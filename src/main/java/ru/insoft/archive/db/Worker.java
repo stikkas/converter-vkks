@@ -14,11 +14,14 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.persistence.EntityManager;
 import javax.persistence.Persistence;
 import javax.swing.JTextArea;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
 import ru.insoft.archive.config.Config;
 import ru.insoft.archive.db.entity.access.Journal;
 import ru.insoft.archive.db.entity.dict.DescriptorValue;
@@ -66,6 +69,9 @@ public class Worker extends Thread {
 	private static final Map<String, String> docTypeCodes = new HashMap<>();
 	private static final Map<String, String> toporefCodes = new HashMap<>();
 	private static final Map<String, String> caseTypeAttrCodes = new HashMap<>();
+	private static final javax.validation.Validator validator
+			= Validation.buildDefaultValidatorFactory().getValidator();
+
 	/**
 	 * Информационная панель для вывода информации
 	 */
@@ -185,10 +191,18 @@ public class Worker extends Thread {
 			// Если номер делу назначаем мы, тогда на один документ приходится одно дело
 			Case acase = cases.get(caseNumber);
 
+			String storeLife = journal.getStoreLife();
+			if (storeLife == null || storeLife.isEmpty()) {
+				storeLife = "Не хранится";
+			}
 			if (acase == null) {
 				acase = new Case(caseNumber, caseTypeCodes.get(caseType),
-						caseStoreLifeCodes.get(journal.getStoreLife()),
+						caseStoreLifeCodes.get(storeLife),
 						journal.getCaseTitle(), journal.getRemark());
+				log("Наполнение дела " + caseNumber);
+				if (!validate(acase, " дела")) {
+					continue;
+				}
 				cases.put(caseNumber, acase);
 			}
 			// Определяем топографический указатель
@@ -237,24 +251,27 @@ public class Worker extends Thread {
 			}
 
 			graph = caseNumber + "_" + (docIndex++) + ".pdf";
-			Path dstFileName = Paths.get(config.dstDir, "files", graph);
-			copyPdf(srcFileName, dstFileName);
-			// Копируем pdf файл
 			Integer pages = journal.getDocPages();
 			if (pages == null) { // В некоторых случаях может быть не указано кол-во страниц
-				pages = getPagesOfPdf(dstFileName.toString());
+				pages = getPagesOfPdf(srcFileName.toString());
 			}
 
 			Date docDate = journal.getDocDate();
 			if (docDate == null) {
 				docDate = new Date();
 			}
+			String docType = journal.getDocType();
 			Document doc = new Document(docNumber,
-					docTypeCodes.get(journal.getDocType()),
+					docTypeCodes.get(docType),
 					journal.getDocTitle(), pages,
 					docDate, journal.getRemark(),
 					journal.getCourt(), journal.getFio(), graph);
-
+			if (!validate(doc, " документа " + docNumber + ", тип " + docType)) {
+				continue;
+			}
+			// Копируем pdf файл
+			Path dstFileName = Paths.get(config.dstDir, "files", graph);
+			copyPdf(srcFileName, dstFileName);
 			acase.addDocument(doc);
 		}
 
@@ -323,5 +340,24 @@ public class Worker extends Thread {
 			log(filename + ": " + ex.getMessage());
 			return 0;
 		}
+	}
+
+	/**
+	 * Произовдит проверку обязательных полей дела или документа
+	 *
+	 * @param item дело или документ
+	 * @param suffix отличающая строка, участвующая в сообщении
+	 * @return в случае отрицательных результатов возвращается false
+	 */
+	private <T> boolean validate(T item, String suffix) {
+		Set<ConstraintViolation<T>> errors = validator.validate(item);
+		if (!errors.isEmpty()) {
+			log("Ошибки при создании" + suffix);
+			for (ConstraintViolation c : errors) {
+				log("\t" + c.getMessage());
+			}
+			return false;
+		}
+		return true;
 	}
 }

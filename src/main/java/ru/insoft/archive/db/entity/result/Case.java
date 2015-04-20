@@ -2,6 +2,8 @@ package ru.insoft.archive.db.entity.result;
 
 import java.util.HashSet;
 import java.util.Set;
+import javax.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.NotEmpty;
 
 /**
  *
@@ -10,15 +12,23 @@ import java.util.Set;
 public class Case {
 
 	// number: "МПО-324"
+	@NotNull(message="Номер дела отсутствует")
+	@NotEmpty(message="Номер дела пустой")
 	String number;
 
 //"type": "CT_08",                                                               
+	@NotNull(message="Тип дела отсутствует")
+	@NotEmpty(message="Тип дела пустой")
 	String type;
 
 //"storeLife": "PERSONAL_DATA",                                                  
+	@NotNull(message="Срок хранения дела отсутствует")
+	@NotEmpty(message="Срок хранения дела пустой")
 	String storeLife;
 
 //"title": "административное дело в отношении Сидорова П.И.",                    
+	@NotNull(message="Заголовок дела отсутствует")
+	@NotEmpty(message="Заголовок дела пустой")
 	String title;
 
 //"toporef": {"room":  202,"rack": 5,"shelf":17},                                                                             
@@ -30,7 +40,7 @@ public class Case {
 //"documents":  [{},{}...] 
 	Set<Document> documents;
 
-	public Case(String number, String type, String storeLife, 
+	public Case(String number, String type, String storeLife,
 			String title, TopoRef toporef, String remark) {
 		this.number = number;
 		this.type = type;
@@ -41,7 +51,7 @@ public class Case {
 		documents = new HashSet<>();
 	}
 
-	public Case(String number, String type, String storeLife, String title, 
+	public Case(String number, String type, String storeLife, String title,
 			String remark) {
 		this.number = number;
 		this.type = type;

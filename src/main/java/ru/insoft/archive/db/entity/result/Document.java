@@ -1,6 +1,8 @@
 package ru.insoft.archive.db.entity.result;
 
 import java.util.Date;
+import javax.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.NotEmpty;
 
 /**
  *
@@ -9,17 +11,25 @@ import java.util.Date;
 public class Document {
 
 //"number": "3",                                                                 
+	@NotNull(message = "Номер документа отсутствует")
+	@NotEmpty(message = "Номер документа пустой")
 	String number;
 
 //"type": "DT_03",                                                               
+	@NotNull(message = "Тип документа отсутствует")
+	@NotEmpty(message = "Тип документа пустой")
 	String type;
 
 //"title": "Опись",                                                              
+	@NotNull(message = "Заголовок документа отсутствует")
+	@NotEmpty(message = "Заголовок документа пустой")
 	String title;
 
+	@NotNull(message = "Кол-во страниц документа отсутствует")
 	Integer pages;
 
 //"date": "2010-03-25T07:59:00",                                                 
+	@NotNull(message = "Дата документа отсутствует")
 	Date date;
 
 //"remark": "часть документов отдана адвокату",                                  
@@ -37,7 +47,7 @@ public class Document {
 	public Document() {
 	}
 
-	public Document(String number, String type, String title, Integer pages, 
+	public Document(String number, String type, String title, Integer pages,
 			Date date, String remark, String court, String fio, String graph) {
 		this.number = number;
 		this.type = type;
@@ -121,6 +131,5 @@ public class Document {
 	public void setGraph(String graph) {
 		this.graph = graph;
 	}
-
 
 }
