@@ -80,11 +80,17 @@ public class Worker extends Thread {
 	 * Json builder для получения json представления объектов
 	 */
 	private final Gson gson;
+	/**
+	 * Принудительно определять кол-во листов из pdf файла
+	 */
+	private final boolean countPages;
 
-	public Worker(JTextArea logPanel, Config config, EsSearchHelperRemote helper) {
+	public Worker(JTextArea logPanel, Config config, EsSearchHelperRemote helper,
+			boolean countPages) {
 		this.logPanel = logPanel;
 		this.helper = helper;
 		this.config = config;
+		this.countPages = countPages;
 		gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.PRIVATE)
 				.setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
 	}
@@ -251,9 +257,16 @@ public class Worker extends Thread {
 			}
 
 			graph = caseNumber + "_" + (docIndex++) + ".pdf";
-			Integer pages = journal.getDocPages();
-			if (pages == null) { // В некоторых случаях может быть не указано кол-во страниц
+
+			Integer pages;
+
+			if (countPages) { //Принудительно считаем, не надеемся на данные в базе
 				pages = getPagesOfPdf(srcFileName.toString());
+			} else {
+				pages = journal.getDocPages();
+				if (pages == null) { // В некоторых случаях может быть не указано кол-во страниц
+					pages = getPagesOfPdf(srcFileName.toString());
+				}
 			}
 
 			Date docDate = journal.getDocDate();
