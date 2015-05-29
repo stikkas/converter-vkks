@@ -10,8 +10,6 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 
 /**
  *
@@ -19,9 +17,10 @@ import javax.xml.bind.annotation.XmlTransient;
  */
 @Entity
 @Table(name = "descriptor_group")
-@XmlRootElement
 @NamedQueries({
-	@NamedQuery(name = "DescriptorGroup.findAll", query = "SELECT d FROM DescriptorGroup d"),})
+	@NamedQuery(name = "DescriptorGroup.findAll", query = "SELECT d FROM DescriptorGroup d"),
+	@NamedQuery(name = "DescriptorGroup.idByCode", query = "SELECT d.descriptorGroupId FROM DescriptorGroup d WHERE d.groupCode = :code")
+})
 public class DescriptorGroup implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -35,7 +34,7 @@ public class DescriptorGroup implements Serializable {
 	@Column(name = "group_code")
 	private String groupCode;
 
-	@OneToMany(mappedBy = "descriptorGroupId")
+	@OneToMany(mappedBy = "descriptorGroup")
 	private Collection<DescriptorValue> descriptorValueCollection;
 
 	public DescriptorGroup() {
@@ -75,7 +74,6 @@ public class DescriptorGroup implements Serializable {
 		this.groupCode = groupCode;
 	}
 
-	@XmlTransient
 	public Collection<DescriptorValue> getDescriptorValueCollection() {
 		return descriptorValueCollection;
 	}

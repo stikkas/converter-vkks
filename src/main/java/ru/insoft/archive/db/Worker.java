@@ -18,10 +18,12 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
 import javax.swing.JTextArea;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
+import org.jboss.marshalling.Pair;
 import ru.insoft.archive.config.Config;
 import ru.insoft.archive.db.entity.access.Journal;
 import ru.insoft.archive.db.entity.dict.DescriptorValue;
@@ -58,6 +60,10 @@ public class Worker extends Thread {
 	 * Топографический указатель
 	 */
 	private static final String TOPOREF = "TOPOREF";
+	private final Pair<String, Long> docGroupId;
+
+	private final EntityManager emDict;
+	private final EntityTransaction etxDict;
 
 	/**
 	 * регулярное выражение для определения расположения дела
@@ -93,6 +99,19 @@ public class Worker extends Thread {
 		this.countPages = countPages;
 		gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.PRIVATE)
 				.setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
+
+		Properties props = new Properties();
+		props.put("javax.persistence.jdbc.url", "jdbc:postgresql://" + config.dbHost + ":" + config.dbPort + "/" + config.db);
+		props.put("javax.persistence.jdbc.password", config.dbPassword);
+		props.put("javax.persistence.jdbc.user", config.dbUser);
+		props.put("javax.persistence.jdbc.driver", config.dbDriver);
+		emDict = Persistence.createEntityManagerFactory("Dict", props)
+				.createEntityManager();
+		etxDict = emDict.getTransaction();
+
+		docGroupId = new Pair(DOCUMENT_TYPE, emDict.createNamedQuery("DescriptorGroup.idByCode", Long.class)
+				.setParameter("code", DOCUMENT_TYPE).getSingleResult()
+		);
 	}
 
 	@Override
@@ -129,7 +148,7 @@ public class Worker extends Thread {
 	 * Преобразует данные из файла Access в файлы json
 	 *
 	 */
-	private void convertData() throws IOException {
+	private void convertData() throws IOException, ClassNotFoundException {
 		Files.createDirectories(Paths.get(config.dstDir, "data"));
 		Files.createDirectories(Paths.get(config.dstDir, "files"));
 		Properties props = new Properties();
@@ -137,25 +156,17 @@ public class Worker extends Thread {
 		EntityManager emAccess = Persistence.createEntityManagerFactory("Access", props)
 				.createEntityManager();
 
-		props = new Properties();
-		props.put("javax.persistence.jdbc.url", "jdbc:postgresql://" + config.dbHost + ":" + config.dbPort + "/" + config.db);
-		props.put("javax.persistence.jdbc.password", config.dbPassword);
-		props.put("javax.persistence.jdbc.user", config.dbUser);
-		props.put("javax.persistence.jdbc.driver", config.dbDriver);
-		EntityManager emDict = Persistence.createEntityManagerFactory("Dict", props)
-				.createEntityManager();
-
 		if (caseTypeCodes.isEmpty()) {
-			fillDict(emDict, CASE_TYPE, caseTypeCodes);
+			fillDict(CASE_TYPE, caseTypeCodes);
 		}
 		if (caseStoreLifeCodes.isEmpty()) {
-			fillDict(emDict, CASE_STORE_LIFE, caseStoreLifeCodes);
+			fillDict(CASE_STORE_LIFE, caseStoreLifeCodes);
 		}
 		if (toporefCodes.isEmpty()) {
-			fillDict(emDict, TOPOREF, toporefCodes);
+			fillDict(TOPOREF, toporefCodes);
 		}
 		if (docTypeCodes.isEmpty()) {
-			fillDict(emDict, DOCUMENT_TYPE, docTypeCodes);
+			fillDict(DOCUMENT_TYPE, docTypeCodes);
 		}
 
 		/*
@@ -165,15 +176,17 @@ public class Worker extends Thread {
 		 showDicts(docTypeCodes, "Document Type");
 		 */
 		Map<String, Case> cases = new HashMap<>();
+		Map<String, Long> numbersForPrefixes = new HashMap<>();
+
 		// Бывают слуючаи, что разные документы ссылаются на один и тот же файл
 		// тогда надо вести учет скопированных файлов. Но с другой стороны
 		// При удалении одного документа у нас удалится файл, на который ссылается
 		// другой документ. Исходя из этого было решено не учитывать возможность повторения
 		// файлов, и копировать все файлы, как-будто они все разные
-
 		String currentPrefix = "";
-		int index = 1;
+		Long index = 1l;
 		long docIndex = 1;
+		int doneCases = 0;
 		for (Journal journal : emAccess.createNamedQuery("Journal.findAll", Journal.class).getResultList()) {
 			String caseType = journal.getCaseType();
 			String prefix = caseTypeAttrCodes.get(caseType);
@@ -182,16 +195,39 @@ public class Worker extends Thread {
 				continue;
 			}
 			if (!prefix.equals(currentPrefix)) {
+				if (!currentPrefix.isEmpty()) {
+					numbersForPrefixes.put(currentPrefix, index);
+				}
 				currentPrefix = prefix;
-				index = helper.queryMaxCaseNumberForPrefix(prefix) + 1;
+				index = numbersForPrefixes.get(prefix);
+				if (index == null) {
+					index = helper.queryMaxCaseNumberForPrefix(prefix) + 1l;
+				}
 			}
 			String caseNumber = journal.getCaseNumber();
 			if (caseNumber == null || caseNumber.isEmpty()) {
-//				caseNumber = prefix + "-" + journal.getId();
 				caseNumber = prefix + "-" + index++;
 			} else {
 				caseNumber = prefix + "-" + caseNumber.trim();
 			}
+
+			Integer rack, shelf;
+			// Определяем топографический указатель
+			String toporef = journal.getToporef();
+			if (toporef != null && !toporef.isEmpty()) {
+				Matcher matcher = toporefPattern.matcher(toporef.trim());
+				if (matcher.find()) {
+					rack = Integer.valueOf(matcher.group("rack"));
+					shelf = Integer.valueOf(matcher.group("shelf"));
+				} else {
+					log("Неправильное расположение дела " + caseNumber + ": " + toporef);
+					continue;
+				}
+			} else {
+				log("Отсутствует расположение дела " + caseNumber);
+				continue;
+			}
+
 			// Предполагаем, что у одного дела может быть несколько документов
 			// Каждая запись соответствует одному документу
 			// Если номер делу назначаем мы, тогда на один документ приходится одно дело
@@ -210,20 +246,10 @@ public class Worker extends Thread {
 					continue;
 				}
 				cases.put(caseNumber, acase);
+				++doneCases;
 			}
-			// Определяем топографический указатель
-			String toporef = journal.getToporef();
-			if (toporef != null && !toporef.isEmpty()) {
-				Matcher matcher = toporefPattern.matcher(toporef.trim());
-				if (matcher.find()) {
-					acase.setToporef(new TopoRef(
-							Integer.valueOf(matcher.group("rack")),
-							Integer.valueOf(matcher.group("shelf"))));
-				} else {
-					log("Wrong format of the TopoRef: " + toporef);
-				}
 
-			}
+			acase.setToporef(new TopoRef(rack, shelf));
 			// пока два возможных формата полученных путей к pdf:
 			// 1 - имя_файла#ссылка
 			// 2 - директория\имя_файла
@@ -273,9 +299,11 @@ public class Worker extends Thread {
 			if (docDate == null) {
 				docDate = new Date();
 			}
+
 			String docType = journal.getDocType();
-			Document doc = new Document(docNumber,
-					docTypeCodes.get(docType),
+
+			Document doc = new Document(journal.getId(), docNumber,
+					getDocTypeCode(docType),
 					journal.getDocTitle(), pages,
 					docDate, journal.getRemark(),
 					journal.getCourt(), journal.getFio(), graph);
@@ -291,8 +319,39 @@ public class Worker extends Thread {
 		emDict.close();
 		emAccess.close();
 		for (String key : cases.keySet()) {
-			Files.write(Paths.get(config.dstDir, "data", key + ".json"), gson.toJson(cases.get(key)).getBytes());
+			Files.write(Paths.get(config.dstDir, "data", key + ".json"),
+					gson.toJson(cases.get(key)).getBytes());
 		}
+		log("Создано " + doneCases + " дел.");
+	}
+
+	private String getDocTypeCode(String docType) {
+		String code = docTypeCodes.get(docType);
+		if (code == null) {
+			log("в справочнике нет значения кода для " + docType);
+			Integer sortOrder = emDict.createNamedQuery("DescriptorValue.maxSortOrderByGroup", Integer.class)
+					.setParameter("code", DOCUMENT_TYPE).getSingleResult();
+			String valueCode = emDict.createNamedQuery("DescriptorValue.lastCodeByGroup", String.class)
+					.setParameter("code", DOCUMENT_TYPE).setMaxResults(1).getSingleResult();
+			String[] parts = valueCode.split("_");
+			String prefix = parts[0];
+			Integer suffix = Integer.valueOf(parts[1]);
+			etxDict.begin();
+			DescriptorValue v = new DescriptorValue(docGroupId.getB(), docType,
+					prefix + "_" + (suffix + 1), sortOrder + 1);
+			try {
+				emDict.persist(v);
+				etxDict.commit();
+				log("Создан справочник для типа документа " + docType + " c кодом " + v.getValueCode());
+				docTypeCodes.put(v.getFullValue(), v.getValueCode());
+				code = docTypeCodes.get(docType);
+			} catch (Exception e) {
+				etxDict.rollback();
+				log("Ошибка при создании справочника для типа документа " + docType);
+				e.printStackTrace();
+			}
+		}
+		return code;
 	}
 
 	/**
@@ -314,15 +373,14 @@ public class Worker extends Thread {
 	/**
 	 * Заполняет справочники из базы
 	 *
-	 * @param emDict entityManager
 	 * @param code код для группы значений справочника
 	 * @param codes словарь для найденных значений - кодов
 	 */
-	private void fillDict(EntityManager emDict, String code, Map<String, String> codes) {
+	private void fillDict(String code, Map<String, String> codes) {
 		boolean caseType = code.equals(CASE_TYPE);
 
-		for (DescriptorValue value : emDict.createNamedQuery("DescriptorValue.findByGroup", DescriptorValue.class
-		)
+		for (DescriptorValue value
+				: emDict.createNamedQuery("DescriptorValue.findByGroup", DescriptorValue.class)
 				.setParameter("code", code).getResultList()) {
 			codes.put(value.getFullValue(), value.getValueCode());
 			if (caseType) {

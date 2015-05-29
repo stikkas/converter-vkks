@@ -28,77 +28,52 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class Journal implements Serializable {
 
 	private static final long serialVersionUID = 1L;
-	@Id
-	@Basic(optional = false)
-	@Column(name = "id")
-	private Integer id;
+	private Long id;
 
-	@Column(name = "case_title")
 	String caseTitle;
-/*
-	@Column(name = "start_date")
-	@Temporal(TemporalType.TIMESTAMP)
-	Date startDate;
 
-	@Column(name = "end_date")
-	@Temporal(TemporalType.TIMESTAMP)
-	Date endDate;
-*/
-	@Column(name = "store_life")
 	String storeLife;
 
-	@Column(name = "doc_type")
 	String docType;
 
-	@Column(name = "court")
 	String court;
 
-	@Column(name = "doc_date")
-	@Temporal(TemporalType.TIMESTAMP)
 	Date docDate;
 
-	@Column(name = "fio")
 	String fio;
 
-	@Column(name = "doc_title")
 	String docTitle;
 
-	@Column(name = "doc_number")
 	String docNumber;
 
-	@Column(name = "pages")
 	Integer docPages;
 
-	@Column(name = "remark")
 	String remark;
 
-	@Column(name = "toporef")
 	String toporef;
 
-	@Column(name = "graph")
 	String graph;
 
-	@Column(name = "case_number")
 	String caseNumber;
 
-	@Column(name = "case_type")
 	String caseType;
 
 	public Journal() {
 	}
 
-	public Journal(Integer id) {
-		this.id = id;
-	}
 
-	public Integer getId() {
+	@Id
+	@Basic(optional = false)
+	@Column(name = "id")
+	public Long getId() {
 		return id;
 	}
 
-	public void setId(Integer id) {
+	public void setId(Long id) {
 		this.id = id;
 	}
 
+	@Column(name = "case_title")
 	public String getCaseTitle() {
 		return caseTitle;
 	}
@@ -106,23 +81,8 @@ public class Journal implements Serializable {
 	public void setCaseTitle(String caseTitle) {
 		this.caseTitle = caseTitle;
 	}
-/*
-	public Date getStartDate() {
-		return startDate;
-	}
 
-	public void setStartDate(Date startDate) {
-		this.startDate = startDate;
-	}
-
-	public Date getEndDate() {
-		return endDate;
-	}
-
-	public void setEndDate(Date endDate) {
-		this.endDate = endDate;
-	}
-*/
+	@Column(name = "store_life")
 	public String getStoreLife() {
 		return storeLife;
 	}
@@ -131,6 +91,7 @@ public class Journal implements Serializable {
 		this.storeLife = storeLife;
 	}
 
+	@Column(name = "doc_type")
 	public String getDocType() {
 		return docType;
 	}
@@ -139,6 +100,7 @@ public class Journal implements Serializable {
 		this.docType = docType;
 	}
 
+	@Column(name = "court")
 	public String getCourt() {
 		return court;
 	}
@@ -147,6 +109,8 @@ public class Journal implements Serializable {
 		this.court = court;
 	}
 
+	@Column(name = "doc_date")
+	@Temporal(TemporalType.TIMESTAMP)
 	public Date getDocDate() {
 		return docDate;
 	}
@@ -155,6 +119,7 @@ public class Journal implements Serializable {
 		this.docDate = docDate;
 	}
 
+	@Column(name = "fio")
 	public String getFio() {
 		return fio;
 	}
@@ -163,7 +128,11 @@ public class Journal implements Serializable {
 		this.fio = fio;
 	}
 
+	@Column(name = "doc_title")
 	public String getDocTitle() {
+		if (docTitle == null || docTitle.trim().isEmpty()) {
+			return docType;
+		}
 		return docTitle;
 	}
 
@@ -171,6 +140,7 @@ public class Journal implements Serializable {
 		this.docTitle = docTitle;
 	}
 
+	@Column(name = "doc_number")
 	public String getDocNumber() {
 		return docNumber;
 	}
@@ -179,6 +149,7 @@ public class Journal implements Serializable {
 		this.docNumber = docNumber;
 	}
 
+	@Column(name = "pages")
 	public Integer getDocPages() {
 		return docPages;
 	}
@@ -187,6 +158,7 @@ public class Journal implements Serializable {
 		this.docPages = docPages;
 	}
 
+	@Column(name = "remark")
 	public String getRemark() {
 		return remark;
 	}
@@ -195,6 +167,7 @@ public class Journal implements Serializable {
 		this.remark = remark;
 	}
 
+	@Column(name = "toporef")
 	public String getToporef() {
 		return toporef;
 	}
@@ -203,6 +176,7 @@ public class Journal implements Serializable {
 		this.toporef = toporef;
 	}
 
+	@Column(name = "graph")
 	public String getGraph() {
 		return graph;
 	}
@@ -211,6 +185,7 @@ public class Journal implements Serializable {
 		this.graph = graph;
 	}
 
+	@Column(name = "case_number")
 	public String getCaseNumber() {
 		return caseNumber;
 	}
@@ -219,6 +194,7 @@ public class Journal implements Serializable {
 		this.caseNumber = caseNumber;
 	}
 
+	@Column(name = "case_type")
 	public String getCaseType() {
 		return caseType;
 	}

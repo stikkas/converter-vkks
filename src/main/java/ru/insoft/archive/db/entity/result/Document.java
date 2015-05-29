@@ -10,6 +10,9 @@ import org.hibernate.validator.constraints.NotEmpty;
  */
 public class Document {
 
+	@NotNull(message = "ElarId документа отсутствует")
+	Long elar_id;
+
 //"number": "3",                                                                 
 	@NotNull(message = "Номер документа отсутствует")
 	@NotEmpty(message = "Номер документа пустой")
@@ -47,8 +50,9 @@ public class Document {
 	public Document() {
 	}
 
-	public Document(String number, String type, String title, Integer pages,
+	public Document(Long elarId, String number, String type, String title, Integer pages,
 			Date date, String remark, String court, String fio, String graph) {
+		this.elar_id = elarId;
 		this.number = number;
 		this.type = type;
 		this.title = title;
@@ -130,6 +134,14 @@ public class Document {
 
 	public void setGraph(String graph) {
 		this.graph = graph;
+	}
+
+	public Long getElarId() {
+		return elar_id;
+	}
+
+	public void setElarId(Long elarId) {
+		this.elar_id = elarId;
 	}
 
 }
